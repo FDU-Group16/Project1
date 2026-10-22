@@ -10,7 +10,7 @@ import os
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from services.m1 import core,dependencies,checkin
+from services.m1 import core,dependencies,scheduler,checkin
 from services.m1.main import app
 from services.platform import Problem,utc_text
 
@@ -162,6 +162,87 @@ class M1Behavior(unittest.TestCase):
             self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,503)
 
 
+    def test_m105_downtime_skips_obsolete_reminders(self):
+        self.book()
+        self.clock=BASE+timedelta(hours=4)
+        self.assertEqual(scheduler.process_due(),1)
+        with core.DB.connection() as conn:
+            events=conn.execute("SELECT payload FROM outbox WHERE kind='notification'").fetchall()
+        self.assertEqual([r['payload']['kind'] for r in events],['NO_SHOW'])
+
+
+    def test_m105_expired_reservation_does_not_block_without_scheduler(self):
+        self.book(end=5)
+        self.clock=BASE+timedelta(hours=2,minutes=15)
+        self.assertEqual(self.book(key='new',user='dev-student-ee',start=3,end=4).status_code,200)
+        self.assertIn('public-s1',[item['id'] for item in self.search(startsAt=utc_text(BASE+timedelta(hours=4)),endsAt=utc_text(BASE+timedelta(hours=5))).json()['items']])
+
+
+    def test_m105_outbox_retry_and_simulated_not_delivered(self):
+        self.book()
+        with patch.dict(os.environ,{'M1_DEV_DELIVERY_FAIL':'1'}):
+            self.assertGreater(scheduler.flush_outbox()['failed'],0)
+        with core.DB.connection() as conn:
+            self.assertTrue(all(r['state']=='PENDING' for r in conn.execute('SELECT state FROM outbox').fetchall()))
+        self.clock+=timedelta(seconds=10)
+        self.assertGreater(scheduler.flush_outbox()['simulated'],0)
+        with core.DB.connection() as conn:
+            self.assertTrue(all(r['state']=='SIMULATED' for r in conn.execute('SELECT state FROM outbox').fetchall()))
+
+
+    def test_m105_failed_reminder_is_suppressed_after_cancellation(self):
+        reservation=self.book().json()
+        self.clock=BASE+timedelta(hours=1,minutes=45)
+        scheduler.process_due()
+        with patch.dict(os.environ,{'M1_DEV_DELIVERY_FAIL':'1'}):
+            scheduler.flush_outbox()
+        self.client.post('/api/v1/reservations/'+reservation['id']+'/cancel',headers=self.headers())
+        self.clock+=timedelta(seconds=10)
+        result=scheduler.flush_outbox()
+        self.assertEqual(result['suppressed'],1)
+        with core.DB.connection() as conn:
+            notification=conn.execute("SELECT * FROM outbox WHERE kind='notification'").fetchone()
+            audits=conn.execute("SELECT state FROM outbox WHERE kind='audit'").fetchall()
+        self.assertEqual(notification['state'],'SUPPRESSED')
+        self.assertIsNotNone(notification['suppressed_at'])
+        self.assertIsNone(notification['delivered_at'])
+        self.assertTrue(all(row['state']=='SIMULATED' for row in audits))
+
+
+    def test_m105_failed_reminders_expire_but_no_show_still_delivers(self):
+        self.book()
+        self.clock=BASE+timedelta(hours=1,minutes=45)
+        scheduler.process_due()
+        with patch.dict(os.environ,{'M1_DEV_DELIVERY_FAIL':'1'}):
+            scheduler.flush_outbox()
+        self.clock=BASE+timedelta(hours=2,minutes=10)
+        scheduler.process_due()
+        with patch.dict(os.environ,{'M1_DEV_DELIVERY_FAIL':'1'}):
+            self.assertEqual(scheduler.flush_outbox()['suppressed'],1)
+        self.clock=BASE+timedelta(hours=2,minutes=15)
+        scheduler.process_due()
+        self.assertEqual(scheduler.flush_outbox()['suppressed'],1)
+        with core.DB.connection() as conn:
+            events=conn.execute("SELECT payload,state FROM outbox WHERE kind='notification'").fetchall()
+        self.assertEqual({row['payload']['kind']:row['state'] for row in events},
+            {'BEFORE_START':'SUPPRESSED','CHECKIN_REMINDER':'SUPPRESSED','NO_SHOW':'SIMULATED'})
+
+
+    def test_m105_failed_reminder_suppressed_after_checkin(self):
+        reservation=self.book().json()
+        self.clock=BASE+timedelta(hours=2,minutes=10)
+        scheduler.process_due()
+        with patch.dict(os.environ,{'M1_DEV_DELIVERY_FAIL':'1'}):
+            scheduler.flush_outbox()
+        result=self.client.post('/api/v1/reservations/'+reservation['id']+'/check-in',
+            json={'code':checkin.daily_code('public',self.clock)},headers=self.headers())
+        self.assertEqual(result.status_code,200)
+        self.clock+=timedelta(seconds=10)
+        self.assertEqual(scheduler.flush_outbox()['suppressed'],1)
+        with core.DB.connection() as conn:
+            self.assertEqual(conn.execute("SELECT state FROM outbox WHERE kind='notification'").fetchone()['state'],'SUPPRESSED')
+
+
     def test_real_identity_fails_closed_and_validates_shape(self):
         with patch.dict(os.environ,{'M1_USE_DEV_DEPENDENCIES':'0'}):
             with patch.object(dependencies,'request_d',side_effect=Problem(503,'DEPENDENCY_UNAVAILABLE','Unavailable')):
@@ -170,6 +251,21 @@ class M1Behavior(unittest.TestCase):
                 self.assertEqual(self.search().status_code,503)
         with patch.dict(os.environ,{'APP_ENV':'production'}):
             self.assertEqual(self.search().status_code,503)
+
+
+    def test_outbox_receipt_timestamp_is_not_delivery_timestamp(self):
+        self.book()
+        with patch.object(dependencies,'deliver',return_value='ACCEPTED'):
+            self.assertGreater(scheduler.flush_outbox()['accepted'],0)
+        with core.DB.connection() as conn:
+            rows=conn.execute('SELECT * FROM outbox').fetchall()
+        self.assertTrue(all(r['state']=='ACCEPTED' and r['acknowledged_at'] is not None and r['delivered_at'] is None for r in rows))
+
+
+    def test_real_delivery_accepted_is_not_delivery(self):
+        with patch.dict(os.environ,{'M1_USE_DEV_DEPENDENCIES':'0','D_NOTIFICATION_TOKEN':'test'}):
+            with patch.object(dependencies,'request_d',return_value={'eventId':'event','status':'accepted'}):
+                self.assertEqual(dependencies.deliver('notification',{'eventId':'event'}),'ACCEPTED')
 
 
 if __name__=='__main__':
