@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "M1 整室状态写回接口（提案）",
-    "version": "0.1.0-proposed",
-    "description": "M2 审批占用与 M3 维修下架通过本接口同步至 M1。契约待组内评审，尚未实现。M1 是座位可预约状态写入方；调用方不得直接操作 M1 数据库。"
+    "version": "0.2.0-proposed",
+    "description": "M1 implements provider-side state writeback. Pending team review and real M2/M3 consumer integration. v0.2.0 preserves v0.1 request/response shapes; defines conflict policy and explicit per-service bearer credentials."
   },
   "tags": [
     {
@@ -14,22 +14,32 @@
   "paths": {
     "/internal/v1/room-blocks/m2/{sourceId}": {
       "put": {
-        "tags": ["Room blocks"],
+        "tags": [
+          "Room blocks"
+        ],
         "operationId": "putM2RoomBlock",
         "summary": "同步整教室审批的时段占用或释放",
-        "description": "来源键为 (M2, sourceId)，sourceId 是稳定的整教室申请/占用 ID。M2 必须发送有限的 UTC 半开区间 [startsAt, endsAt)。ACTIVE 阻断该房间时段内的座位；RELEASED 移除该来源的阻断并保留版本墓碑。仅 M2 服务身份可调用。相同版本和完整请求重复提交返回原已应用状态；旧版本或同版本不同请求返回 409。具体与既有个人预约冲突时的业务裁决待评审。",
+        "description": "来源键为 (M2, sourceId)，sourceId 是稳定的整教室申请/占用 ID。M2 必须发送有限的 UTC 半开区间 [startsAt, endsAt)。ACTIVE 阻断该房间时段内的座位；RELEASED 移除该来源的阻断并保留版本墓碑。仅 M2 服务身份可调用。相同版本和完整请求重复提交返回原已应用状态；旧版本或同版本不同请求返回 409。ACTIVE 与既有有效个人预约重叠时返回 409 ROOM_OCCUPANCY_CONFLICT，原状态不变。",
         "parameters": [
-          { "$ref": "#/components/parameters/SourceId" },
-          { "$ref": "#/components/parameters/CorrelationId" }
+          {
+            "$ref": "#/components/parameters/SourceId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
         ],
         "security": [
-          { "serviceBearer": [] }
+          {
+            "serviceBearer": []
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/M2BlockUpdate" },
+              "schema": {
+                "$ref": "#/components/schemas/M2BlockUpdate"
+              },
               "examples": {
                 "active": {
                   "summary": "审批占用",
@@ -56,35 +66,61 @@
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/AppliedState" },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/RoomNotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "422": { "$ref": "#/components/responses/Unprocessable" },
-          "503": { "$ref": "#/components/responses/Unavailable" }
+          "200": {
+            "$ref": "#/components/responses/AppliedState"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/RoomNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
         }
       }
     },
     "/internal/v1/room-blocks/m3/{sourceId}": {
       "put": {
-        "tags": ["Room blocks"],
+        "tags": [
+          "Room blocks"
+        ],
         "operationId": "putM3RoomBlock",
         "summary": "同步维修下架或验收恢复",
-        "description": "来源键为 (M3, sourceId)，sourceId 是稳定的报修工单 ID。M3 可省略 endsAt 表示 [startsAt, +∞) 的开放终止区间。维修中发送 ACTIVE，验收通过后发送更高版本的 RELEASED。仅 M3 服务身份可调用。RELEASED 即使先于该键的 ACTIVE 到达也记录版本墓碑，以拒绝迟到的旧 ACTIVE。",
+        "description": "来源键为 (M3, sourceId)，sourceId 是稳定的报修工单 ID。M3 可省略 endsAt 表示 [startsAt, +∞) 的开放终止区间。维修中发送 ACTIVE，验收通过后发送更高版本的 RELEASED。仅 M3 服务身份可调用。RELEASED 即使先于该键的 ACTIVE 到达也记录版本墓碑，以拒绝迟到的旧 ACTIVE。 ACTIVE 保留既有个人预约但禁止新增；释放单个工单不能移除其他有效来源。",
         "parameters": [
-          { "$ref": "#/components/parameters/SourceId" },
-          { "$ref": "#/components/parameters/CorrelationId" }
+          {
+            "$ref": "#/components/parameters/SourceId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
         ],
         "security": [
-          { "serviceBearer": [] }
+          {
+            "serviceBearer": []
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/M3BlockUpdate" },
+              "schema": {
+                "$ref": "#/components/schemas/M3BlockUpdate"
+              },
               "examples": {
                 "active": {
                   "summary": "维修下架，结束时间尚不确定",
@@ -109,14 +145,30 @@
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/AppliedState" },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/RoomNotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" },
-          "422": { "$ref": "#/components/responses/Unprocessable" },
-          "503": { "$ref": "#/components/responses/Unavailable" }
+          "200": {
+            "$ref": "#/components/responses/AppliedState"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/RoomNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
         }
       }
     }
@@ -126,7 +178,7 @@
       "serviceBearer": {
         "type": "http",
         "scheme": "bearer",
-        "description": "服务间身份验证提案。令牌签发和校验方式由 D 与受影响模块组后续确定；M1 必须校验调用身份与 M2/M3 路径匹配。"
+        "description": "分别配置 M1_M2_TOKEN 和 M1_M3_TOKEN；校验身份与路径匹配。令牌必须通过部署密钥传入，未配置返回 503。D 统一服务身份集成仍待评审。"
       }
     },
     "parameters": {
@@ -157,26 +209,57 @@
       "M2BlockUpdate": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["roomId", "revision", "status", "startsAt", "endsAt"],
+        "required": [
+          "roomId",
+          "revision",
+          "status",
+          "startsAt",
+          "endsAt"
+        ],
         "properties": {
-          "roomId": { "$ref": "#/components/schemas/RoomId" },
-          "revision": { "$ref": "#/components/schemas/Revision" },
-          "status": { "$ref": "#/components/schemas/BlockStatus" },
-          "startsAt": { "$ref": "#/components/schemas/UtcTimestamp" },
-          "endsAt": { "$ref": "#/components/schemas/UtcTimestamp" }
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BlockStatus"
+          },
+          "startsAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "endsAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
         },
         "description": "M2 的完整目标状态；endsAt 必填，且严格晚于 startsAt。RELEASED 也应保留相同来源和时段信息。"
       },
       "M3BlockUpdate": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["roomId", "revision", "status", "startsAt"],
+        "required": [
+          "roomId",
+          "revision",
+          "status",
+          "startsAt"
+        ],
         "properties": {
-          "roomId": { "$ref": "#/components/schemas/RoomId" },
-          "revision": { "$ref": "#/components/schemas/Revision" },
-          "status": { "$ref": "#/components/schemas/BlockStatus" },
-          "startsAt": { "$ref": "#/components/schemas/UtcTimestamp" },
-          "endsAt": { "$ref": "#/components/schemas/UtcTimestamp" }
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BlockStatus"
+          },
+          "startsAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "endsAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
         },
         "description": "M3 的完整目标状态；省略 endsAt 表示开放终止，若提供则必须严格晚于 startsAt。"
       },
@@ -194,7 +277,10 @@
       },
       "BlockStatus": {
         "type": "string",
-        "enum": ["ACTIVE", "RELEASED"],
+        "enum": [
+          "ACTIVE",
+          "RELEASED"
+        ],
         "description": "ACTIVE 施加阻断；RELEASED 移除本来源阻断并保留版本墓碑。"
       },
       "UtcTimestamp": {
@@ -206,27 +292,55 @@
       "AppliedBlockState": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["sourceSystem", "sourceId", "roomId", "revision", "status", "startsAt", "appliedAt"],
+        "required": [
+          "sourceSystem",
+          "sourceId",
+          "roomId",
+          "revision",
+          "status",
+          "startsAt",
+          "appliedAt"
+        ],
         "properties": {
           "sourceSystem": {
             "type": "string",
-            "enum": ["M2", "M3"]
+            "enum": [
+              "M2",
+              "M3"
+            ]
           },
           "sourceId": {
             "type": "string"
           },
-          "roomId": { "$ref": "#/components/schemas/RoomId" },
-          "revision": { "$ref": "#/components/schemas/Revision" },
-          "status": { "$ref": "#/components/schemas/BlockStatus" },
-          "startsAt": { "$ref": "#/components/schemas/UtcTimestamp" },
-          "endsAt": { "$ref": "#/components/schemas/UtcTimestamp" },
-          "appliedAt": { "$ref": "#/components/schemas/UtcTimestamp" }
+          "roomId": {
+            "$ref": "#/components/schemas/RoomId"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BlockStatus"
+          },
+          "startsAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "endsAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "appliedAt": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
         },
         "description": "M1 已持久化的来源状态。RELEASED 记录仍保留以拒绝乱序旧请求；重复请求返回原状态及原 appliedAt。"
       },
       "Problem": {
         "type": "object",
-        "required": ["type", "title", "status", "code"],
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
         "properties": {
           "type": {
             "type": "string",
@@ -263,7 +377,9 @@
         "description": "目标状态已应用；幂等重试返回已应用的同一状态。",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/AppliedBlockState" }
+            "schema": {
+              "$ref": "#/components/schemas/AppliedBlockState"
+            }
           }
         }
       },
@@ -271,7 +387,9 @@
         "description": "请求 JSON 无法解析或必需字段缺失。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       },
@@ -279,7 +397,9 @@
         "description": "缺少或无效的服务身份凭证。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       },
@@ -287,7 +407,9 @@
         "description": "服务身份与 M2/M3 路径不匹配，或无写回权限。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       },
@@ -295,7 +417,9 @@
         "description": "roomId 在权威主数据中不存在。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       },
@@ -303,7 +427,9 @@
         "description": "旧版本（STALE_REVISION）、同版本不同请求（REVISION_PAYLOAD_MISMATCH）或业务占用冲突（ROOM_OCCUPANCY_CONFLICT，裁决政策待决）。不可盲目重试。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       },
@@ -311,7 +437,9 @@
         "description": "JSON 结构正确但时段无效、时间非 UTC，或来源与房间关系不合法。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       },
@@ -319,7 +447,9 @@
         "description": "临时不可用；调用方可使用相同来源键、版本和请求体做有界退避重试。",
         "content": {
           "application/problem+json": {
-            "schema": { "$ref": "#/components/schemas/Problem" }
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
           }
         }
       }
