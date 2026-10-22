@@ -12,7 +12,7 @@ This repository is at the architecture scaffold phase. Only health endpoints and
 
 ## Sources of truth
 
-1. `任务书.pdf` is the course brief. It is currently a local, untracked reference; do not alter or delete it.
+1. `任务书.pdf` is the course brief and a versioned reference; do not alter or delete it.
 2. `docs/requirements.md` tracks requirements and unresolved decisions.
 3. `contracts/` contains proposed, versioned cross-service interface contracts. Contract status is stated in `contracts/README.md`.
 4. `docs/decisions/` records architecture choices. `proposed` does not mean the team has approved a decision.
@@ -38,6 +38,33 @@ Keep `apps/web` as one Vue application. Organize business pages, components, API
 
 Read `apps/web/AGENTS.md` before changing the Web client. It defines frontend ownership, shared-file review, style and state boundaries, and integration checks. Changes to the application shell, root router, global styles, shared components, dependency manifests/lockfiles, or Web build/deployment configuration require coordination and review by the relevant maintainers and affected module groups. No individual frontend maintainer is assigned by these rules; identify integration and review responsibility in the task or PR.
 
+## Cross-module collaboration and develop synchronization
+
+Attempt to synchronize `develop` only when the current task actually needs capabilities or coordinated changes from another business module or a shared module such as D. Independent work within one module does not require a fetch at task start or on every message. Frontend and backend work belonging to the same business module is not by itself cross-module collaboration. Identify the concrete dependency and allowed directories in the task notes first.
+
+1. When collaboration is needed, inspect the current branch, HEAD, working tree, configured remotes, and any unfinished merge/rebase or unresolved conflicts. Preserve all existing changes. Use the confirmed team remote, normally the existing `origin`; do not invent a remote or silently substitute another base branch.
+2. Fetch the remote `develop` branch and verify the fetched remote-tracking SHA. For `origin`, an explicit command is `git fetch origin refs/heads/develop:refs/remotes/origin/develop`. If the remote/branch is missing or the fetch fails, record that the latest remote state is unconfirmed. Describe what the current checkout provides without claiming the remote module also lacks the capability. Independent work within the authorized module may continue; integration depending on unavailable code must remain explicitly unverified.
+3. If the fetched `<remote>/develop` commit is already an ancestor of HEAD, no branch update is needed. Otherwise, if HEAD is an ancestor of that commit, the index and tracked working files are clean, and no untracked file would be overwritten, this rule authorizes `git merge --ff-only <remote>/develop` on the assigned working branch. Unrelated untracked reference files such as `任务书.pdf` do not by themselves prevent synchronization and must remain untouched.
+4. If histories have diverged, the file-safety conditions above are not met, or a Git operation is unfinished, preserve the checkout and report the required human integration. The fetched module status and contracts may be inspected read-only, for example with `git show <remote>/develop:<path>`, to distinguish code present on develop from code integrated into the working branch. Do not automatically stash, commit, discard, reset, rebase, cherry-pick, create a merge commit, or resolve conflicts to force synchronization.
+5. After a branch update, re-read the applicable `AGENTS.md`, module status records and dependency contracts from that checkout. When only inspecting a fetched ref, label its evidence with that ref and SHA. Record why synchronization was needed, the time, remote, working branch, fetched `develop` SHA, resulting HEAD, and outcome in the task notes or the current module's handoff record. Validate the actual checked-out code; reading a remote ref is not evidence of successful local integration.
+6. If the needed capability is not implemented in another business module, explain the missing interface or behavior, its effect on the current task, and the next integration step. Record the gap in the current module's task/status; do not implement or edit that other module's code, tests, rules or status files to fill it. A planned contract or static page is not an available business capability. Report partial completion and the unverified dependency honestly.
+
+The authored changes for a module task stay within that business module's authorized frontend/backend directories. D and other clearly identified shared infrastructure are exceptions when needed by the task: define the requirement, limited scope and acceptance criteria before implementing shared changes, update their contracts/status when affected, and obtain the normal affected-owner review before merge. This exception does not ratify D ownership or authorize unrelated shared features. Impacts on other business modules are described in the current task/PR for their owners to handle.
+
+The permitted fast-forward synchronizes already-integrated team code into the checkout; subsequent authored edits still follow the module boundaries above. This limited authorization does not permit moving `main`, a release branch or detached HEAD to `develop`, merging work into `develop`, pushing, force-pushing or releasing. Other branch merges and conflict handling remain subject to the human-review rules below.
+
+## Module status and agent handoff
+
+Read `docs/module-status.md`, the affected module's `STATUS.md`, and the status and approved contracts of any provider the task will call. When collaboration is needed, apply the conditional develop procedure above and refresh those records before relying on the provider. These files are repository handoff records, not shared chat memory. If a status entry is stale or contradicts code or a contract, verify the evidence and report the discrepancy before relying on the capability. A proposed contract must never be treated as an available endpoint.
+
+Maintain backend handoff records at `services/m1/STATUS.md`, `services/m2/STATUS.md`, `services/m3/STATUS.md`, and `services/d/STATUS.md`. Each frontend module maintains `apps/web/src/modules/<module>/STATUS.md`; `apps/web/STATUS.md` covers only the common shell and shared infrastructure. Keep `docs/module-status.md` as a stable link index so normal module work does not require editing one shared progress table.
+
+Before reporting a task complete, update the affected status records in the same change as the code. Record the update date, associated requirement IDs, completed behavior and source paths, available endpoints or frontend entry points, contract versions, verification commands/results, dependencies, unresolved issues, and the next integration step. Separate what is implemented, what has been tested, and what is deployed; include PR/commit, environment, release and migration evidence when available, and explicitly mark unknown or unverified fields. Keep a short handoff history with links to task notes rather than duplicating detailed logs. Do not invent a review, deployment, passing test, or implementation claim.
+
+API request/response fields, errors, authentication, examples, and compatibility rules remain in `contracts/`; status records link to these definitions and state whether they are proposed, implemented, or verified. Update affected requirement traceability and shared contract compatibility notes when behavior or interfaces change. Record frontend/backend integration gaps even when one side is complete; describe other business modules' required follow-up in the current task/status for their owners instead of editing their records. Keep credentials and personal data out of all handoff records.
+
+Agents in the same checkout can read these files immediately. Other branches, worktrees, or teammates receive them through the normal code-and-documentation commit/PR workflow; local edits are not automatically synchronized or deployed. Each task must preserve the distinction between its working tree and an integrated or released version.
+
 ## Change workflow
 
 1. For a feature task, use `docs/ai-task-template.md` to identify requirement IDs, scope, acceptance criteria, affected contract and schema, and verification before coding.
@@ -49,4 +76,4 @@ Read `apps/web/AGENTS.md` before changing the Web client. It defines frontend ow
 
 ## Branch and release convention (proposed)
 
-The proposed convention uses `m1`, `m2`, and `m3` for module work; integration would use reviewed pull requests into `develop`, with releases from reviewed `main` and a tag. A later delivery stage plans automatic testing deployments after integration; production would require human approval and a rollback path. Record the deployed tag and migration version when that pipeline exists. The team must ratify this convention before using it as a gate.
+The proposed convention uses `m1`, `m2`, and `m3` for module work; integration would use reviewed pull requests into `develop`, with releases from reviewed `main` and a tag. A later delivery stage plans automatic testing deployments after integration; production would require human approval and a rollback path. Record the deployed tag and migration version when that pipeline exists. The collaboration-triggered develop synchronization rule above applies now; the remaining branch naming, review and release convention must be ratified by the team before being used as a gate.

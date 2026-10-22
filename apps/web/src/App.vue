@@ -1,7 +1,17 @@
+<script setup lang="ts">
+import { RouterView } from 'vue-router';
+import AppLayout from './shared/layouts/AppLayout.vue';
+
+const navigation = [
+  { label: '首页', to: '/' },
+  { label: '座位预约', to: '/m1' },
+  { label: '整室申请', to: '/m2' },
+  { label: '报修工单', to: '/m3' },
+];
+</script>
+
 <template>
-  <main class="shell">
-    <p class="eyebrow">Campus Resource Platform</p>
-    <h1>校园资源服务平台</h1>
-    <p>工程骨架已就绪。业务功能将在需求和接口评审后逐步接入。</p>
-  </main>
+  <AppLayout :navigation="navigation">
+    <RouterView />
+  </AppLayout>
 </template>

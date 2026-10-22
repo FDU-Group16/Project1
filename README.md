@@ -71,6 +71,7 @@ bash scripts/check.sh
 
 - [Agent 规则](AGENTS.md)
 - [需求基线与状态](docs/requirements.md)
+- [模块完成记录与 Agent 交接入口](docs/module-status.md)
 - [实施计划](docs/plan.md)
 - [跨模块接口登记](contracts/README.md)
 - [D 公共层归属提案](docs/decisions/0002-d-ownership.md)
