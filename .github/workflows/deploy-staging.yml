@@ -1,0 +1,66 @@
+name: Staging deployment
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  scaffold:
+    name: Validate staging
+    runs-on: ubuntu-latest
+    env:
+      UV_CACHE_DIR: .uv-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: python -m pip install uv==0.10.0
+      - run: uv sync --frozen
+      - run: npm --prefix apps/web ci
+      - run: bash scripts/check.sh
+      - name: Check staging Compose configuration
+        run: DEPLOY_SHA="$GITHUB_SHA" docker compose --env-file .env.example -f compose.staging.yaml config --quiet
+      - name: Build deployable API and Web images
+        run: |
+          docker build --pull --platform linux/amd64 -f docker/api.Dockerfile -t campus-resource-api:ci .
+          docker build --pull --platform linux/amd64 -f docker/web.Dockerfile -t campus-resource-web:ci .
+
+  deploy-staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    needs: scaffold
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: campus-resource-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare staging SSH connection
+        env:
+          STAGING_SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          STAGING_SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_SSH_PRIVATE_KEY"
+          test -n "$STAGING_SSH_KNOWN_HOSTS"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$STAGING_SSH_PRIVATE_KEY" > "$HOME/.ssh/staging_key"
+          printf '%s\n' "$STAGING_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/staging_key" "$HOME/.ssh/known_hosts"
+      - name: Deploy checked commit to staging
+        env:
+          STAGING_SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+          STAGING_SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+          STAGING_SSH_PORT: ${{ secrets.STAGING_SSH_PORT }}
+        run: bash scripts/deploy-staging-upload.sh

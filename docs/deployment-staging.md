@@ -1,6 +1,15 @@
 # `develop` 测试环境自动部署
 
-`develop` 每次推送后，GitHub Actions 先执行 `scaffold` 检查；通过后才运行 `deploy-staging`。工作流在 GitHub runner 构建 Web、M1、M2、M3、D 镜像，并与 PostgreSQL 镜像一起通过 SSH 传到测试服务器。部署使用 GitHub `staging` environment，按环境锁串行执行。目标服务器和端口由 GitHub Secrets 与服务器私有 `.env` 配置，不写入仓库。更换目标服务器后，须重新核验工作流、容器健康状态和外部访问；旧环境的结果不能证明新环境已部署成功。
+`develop` 每次推送后，GitHub Actions 的独立 `Staging deployment` 工作流先执行 `scaffold` 检查；通过后才运行 `deploy-staging`。工作流在 GitHub runner 构建 Web、M1、M2、M3、D 镜像，并与 PostgreSQL 镜像一起通过 SSH 传到测试服务器。部署使用 GitHub `staging` environment，按环境锁串行执行。目标服务器和端口由 GitHub Secrets 与服务器私有 `.env` 配置，不写入仓库。更换目标服务器后，须重新核验工作流、容器健康状态和外部访问；旧环境的结果不能证明新环境已部署成功。
+
+## 工作流触发范围
+
+| 工作流 | 触发事件 | 执行内容 |
+| --- | --- | --- |
+| [`CI`](../.github/workflows/ci.yml) | `main/m1/m2/m3` 推送、PR 新建/重开/更新 | 构建和测试，不含部署任务 |
+| [`Staging deployment`](../.github/workflows/deploy-staging.yml) | 仅 `develop` 推送 | 相同的构建和测试，通过后部署该次推送的提交 |
+
+M1 的推送仍由 GitHub runner 自动检查，但不会启动部署工作流，CI 页面也没有“跳过部署”任务。`develop` 的 `push` 事件只启动独立部署工作流；若该分支有未合并 PR，PR 更新事件仍会另行触发 CI。既有 Actions 历史记录会保留；若多个分支共享同一 SHA，提交页面仍可能汇总该提交的其他分支运行状态。方案、验收与验证记录见 [CI 与测试部署分离](tasks/2026-10-22-ci-triggers.md)。
 
 这台服务器作为 GitHub Actions 的自动部署目标。部署负责人完成一次性服务器和 GitHub Secrets 配置后，日常部署、健康检查和失败时的应用回退由工作流执行；其他成员通过各自分支、PR 和 CI 检查参与开发，不需要登录服务器手工验证功能。这里的“GitHub 自动部署”是 GitHub Actions 通过 SSH 部署到服务器，不是 GitHub Pages 托管。
 
@@ -48,7 +57,7 @@ ssh-keygen -t ed25519 -N '' -f ~/.ssh/campus_staging_deploy -C github-actions-st
 | `STAGING_SSH_KNOWN_HOSTS` | 经可信渠道核对指纹后的 OpenSSH `known_hosts` 行 |
 | `STAGING_SSH_PORT` | 可选；SSH 非默认端口时填写 |
 
-`STAGING_SSH_HOST` 应与 `known_hosts` 使用的地址一致；非默认 SSH 端口的 `known_hosts` 主机字段使用 `[主机]:端口` 格式。`staging` 环境不需要人工批准；可按团队权限要求限制只有 `develop` 分支能部署。`deploy-staging` 仅在 `develop` 的 `push` 且 `scaffold` 成功后运行，PR 和其他分支只运行检查。不要将私钥贴进聊天、CI 日志或仓库。
+`STAGING_SSH_HOST` 应与 `known_hosts` 使用的地址一致；非默认 SSH 端口的 `known_hosts` 主机字段使用 `[主机]:端口` 格式。`staging` 环境不需要人工批准；可按团队权限要求限制只有 `develop` 分支能部署。独立部署工作流仅监听 `develop` 的 `push`，其中 `deploy-staging` 依赖 `scaffold` 成功；PR 和 `main/m1/m2/m3` 推送只启动 CI 检查。不要将私钥贴进聊天、CI 日志或仓库。
 
 若连接返回 `Permission denied (password)`，而 `ssh -vvv` 显示服务端只允许 `password`，在目标服务器检查实际生效的 `PubkeyAuthentication`、`AuthenticationMethods` 和 `AuthorizedKeysFile` 设置，并核对部署用户家目录、`.ssh`、`authorized_keys` 的归属与权限。修改 SSH 配置时保持当前会话开启；重新加载服务后，从新终端验证密钥登录成功，再关闭旧会话。
 
