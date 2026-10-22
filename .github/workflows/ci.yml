@@ -27,9 +27,32 @@ jobs:
       - run: uv sync --frozen
       - run: npm --prefix apps/web ci
       - run: bash scripts/check.sh
+      - name: Check staging image deployment behavior
+        run: python3 scripts/test-staging-images.py
       - name: Check staging Compose configuration
         run: DEPLOY_SHA="$GITHUB_SHA" docker compose --env-file .env.example -f compose.staging.yaml config --quiet
-      - name: Build deployable API and Web images
-        run: |
-          docker build --pull --platform linux/amd64 -f docker/api.Dockerfile -t campus-resource-api:ci .
-          docker build --pull --platform linux/amd64 -f docker/web.Dockerfile -t campus-resource-web:ci .
+      - uses: docker/setup-buildx-action@v4
+      - name: Build deployable API image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/api.Dockerfile
+          platforms: linux/amd64
+          pull: true
+          load: true
+          push: false
+          tags: campus-resource-api:ci
+          cache-from: type=gha,scope=ci-api,version=2
+          cache-to: type=gha,scope=ci-api,mode=max,version=2
+      - name: Build deployable Web image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/web.Dockerfile
+          platforms: linux/amd64
+          pull: true
+          load: true
+          push: false
+          tags: campus-resource-web:ci
+          cache-from: type=gha,scope=ci-web,version=2
+          cache-to: type=gha,scope=ci-web,mode=max,version=2
