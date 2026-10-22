@@ -11,6 +11,7 @@
 | M3 后端 | [services/m3/STATUS.md](../services/m3/STATUS.md) | 工单、维修、验收及对 M1/D 的依赖 |
 | D 后端 | [services/d/STATUS.md](../services/d/STATUS.md) | 身份、权限、主数据、通知、审计与责任决策 |
 | Web 公共部分 | [apps/web/STATUS.md](../apps/web/STATUS.md) | 布局、公共组件、路由汇总和公共基础设施 |
+| D-02 前端 | [modules/d/STATUS.md](../apps/web/src/modules/d/STATUS.md) | 房间和座位管理界面及真实主数据接入 |
 | M1 前端 | [modules/m1/STATUS.md](../apps/web/src/modules/m1/STATUS.md) | M1 页面、路由及与 M1 后端的接入情况 |
 | M2 前端 | [modules/m2/STATUS.md](../apps/web/src/modules/m2/STATUS.md) | M2 页面、路由及与 M2 后端的接入情况 |
 | M3 前端 | [modules/m3/STATUS.md](../apps/web/src/modules/m3/STATUS.md) | M3 页面、路由及与 M3 后端的接入情况 |

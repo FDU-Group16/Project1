@@ -23,3 +23,49 @@ M1 依赖 D 身份、主数据、通知和审计，触发 develop 检查。允�
 11. 真实 D↔M1 HTTP 和前端验收，迁移重放、并发、越权、失败路径，bash scripts/check.sh，关键行为变异验证，更新交接。
 
 API 使用 UTC、稳定 ID 和 [start,end)。服务仅访问本服务 schema，跨服务通过 HTTP；正常运行不能模拟成功。每项需求同批更新实现/契约/测试/前后端状态，按需求提交到 m1。共享改动由 M1 集成，D 各子域拟议维护组和 M1/M2/M3 消费组在合并前评审，具体人工人员待团队登记；提交不代表批准或部署。临时依赖若需要，按任务模板明确清单、配置、替换条件及保留业务代码。
+
+## 最终实现与自动验收
+
+- M1-01～08 后端按单个需求提交；前端按搜索预约、签到历史、违约、统计、来源流程分批提交。D-02 后端与管理界面单独提交。
+- `bash scripts/check.sh`（2026-10-22）最终通过：26 个契约操作/本地引用、四服务真实健康检查、全新隔离 PostgreSQL 迁移及业务测试（D 14 项、M1 30 项）、真实 M1→D-02 HTTP、Vue 类型检查与生产构建。
+- 真实 HTTP 验证：D 房间/座位创建、院系和预约所有权隔离、幂等重放、两用户并发抢座、M2 冲突拒绝、M3 保留已有预约、多来源释放、旧版本拒绝、D 服务故障503；M1/D 数据库账号不能访问对方 schema。身份仍为显式开发替身。
+- 变异验证：在进程内故意放开院系授权、移除预约冲突检查，两项对应测试均断言失败；恢复原实现后均通过。源文件未保留缺陷。
+- 独立复查修复了：D 响应缺字段被误当公共房间、重定向转发凭据、失败重试投递过期提醒。回归覆盖严格响应/ID校验、301/302/303/307/308 不转发、取消/签到/过期后 SUPPRESSED。
+- 迁移：D `001_master_data.sql`，M1 `001_reservations.sql`、`002_outbox_receipts.sql`、`003_suppressed_reminders.sql`；空库顺序重放及重复执行通过，种子独立且幂等。
+- 生产构建浏览器回归：7组检查、1440/768/430/375/320px，无JavaScript错误；正式入口转真实登录、不提供开发身份、不渲染演示房间；旧显式预览、历史/导航/焦点正常。
+- 真实业务浏览器：`WEB_BUSINESS_TEST=1 NODE_PATH=<已有Playwright依赖目录> node apps/web/tests/business.browser.cjs http://127.0.0.1:5173` 全部通过。真实 Web→D/M1→PostgreSQL 覆盖房间/座位创建、编辑、注销，插座筛选、预约/取消/再次预约，身份切换后他人详情404且页面不残留、学生管理守卫403，实际统计、来源与每日编码展示；JavaScript错误0。使用显式合成身份，未拦截业务接口；实际签到与调度边界由后端固定时钟行为测试覆盖，不混称浏览器实时签到验收。早先自动化连接挂起已中断，最终证据来自可复跑的 Playwright 脚本。
+- 一键开发命令 `uv run python -m services.m1.temporary_dependencies.run_demo` 在新建独立 PostgreSQL 成功启动 D、M1、调度器和 Vite；同一业务浏览器脚本在该新库再次全部通过。Ctrl+C 正常停止四个子进程，合成发件箱标记为 SIMULATED。临时验收数据库及凭据文件已清理；演示数据库已停止并保留，忽略的本机随机配置保留供下次启动，不纳入提交。
+- 最后 `git diff --check`、新增浏览器脚本语法及改动 Markdown 本地链接检查通过。
+
+## 剩余边界与交接
+
+本次完成 M1 与 D-02 的本地代码和上述验证。D-01/03/04 的真实身份、通知、审计不在用户授权范围；消费者适配和发件箱已实现，实际授权/投递/审计存储联调仍未验证。M2/M3 提供方应用、补偿流程和部署端到端未验证。主数据远程读与预约事务之间的并发变更窗口仍需跨组集成时评估事件/版本协调，未声称分布式强一致。
+
+普通运行只用真实依赖；开发替身路径/启动/移除清单见后端临时依赖README、D-02任务和Web身份库存。`services/m1/temporary_dependencies/run_demo.py` 显式启动本机合成演示，不是正常发布配置。
+
+人工验收/契约批准/具体评审人、PR、部署tag、发布和生产迁移证据：未提供或未执行。未修改 M2/M3 业务/状态，未合并 develop/main，未推送或发布。原 develop 工作区的 README、Web状态、需求、本地启动器及其任务记录保留。首次 fetch 的日期和 SHA 已记录，精确时分秒未记录。
+
+## 按需求提交记录
+
+以下均为本地 m1 分支；最终集成验收提交另见 Git 最新记录。
+
+| 提交 | 需求与内容 |
+| --- | --- |
+| `60bbb0a` | docs(M1,D-02): define scoped delivery plan and acceptance rules |
+| `7ec2326` | docs(M1,D-02): specify public APIs and room writeback compatibility |
+| `4698627` | feat(D-02): persist scoped room and seat master data with replayable migrations |
+| `91c3911` | feat(M1-01): validate trusted identities and isolate department access |
+| `d1b1687` | feat(M1-02): search available seats by time and socket |
+| `65d6fd6` | feat(M1-03): serialize reservations and enforce duration and cancellation rules |
+| `18ac1dd` | feat(M1-04): verify daily room codes and check-in deadlines |
+| `21d1974` | feat(M1-05): persist reminders no-shows and retry-safe delivery |
+| `a94e0b9` | feat(M1-06): expose private history and revalidate repeat bookings |
+| `5520627` | feat(M1-07): aggregate room and seat reservation facts |
+| `9821db1` | feat(M1-08): apply versioned room blocks and retain source provenance |
+| `adc0752` | feat(web): consume identity contracts and configure public API proxies |
+| `23e7672` | feat(D-02): add room and seat administration pages |
+| `756bd4d` | feat(M1-01,M1-02,M1-03): connect seat search and reservation forms |
+| `1c0e850` | feat(M1-04,M1-06): add check-in and private reservation history |
+| `9d719b7` | feat(M1-05): show paginated breach history |
+| `af67c86` | feat(M1-07): show room and seat reservation statistics |
+| `2357b74` | feat(M1-08): expose room code display and source provenance |

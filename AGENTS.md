@@ -8,7 +8,7 @@ Keep module-specific agent instructions and development documentation in the cor
 
 ## Current phase
 
-This repository is at the architecture scaffold phase. Only health endpoints and a static Web shell are implemented. Do not infer that business endpoints in `contracts/` already exist. Do not implement M1, M2, M3, or D business features without a scoped task and acceptance criteria.
+The m1 branch now contains the first scoped M1 and D-02 business implementation. M2/M3 and D-01/D-03/D-04 remain provider dependencies; consult module status records for implemented, tested and deployed boundaries. A contract proposal alone is not an available endpoint. Do not implement additional M1, M2, M3, or D features without a scoped task and acceptance criteria.
 
 ## Sources of truth
 

@@ -10,7 +10,7 @@
 
 ```sh
 uv run python -m services.d.seed
-uv run uvicorn services.d.main:app --port 8004
+uv run uvicorn services.d.main:app --port 3104
 ```
 
 种子仅创建 `demo-room-public`、`demo-room-cs`、`demo-room-ee` 和每室六座（`{roomId}-seat-01` 至 `-06`），均为合成资源；可重复，不覆盖管理员修改，也不恢复注销数据。种子独立于迁移，不自动在服务启动执行。

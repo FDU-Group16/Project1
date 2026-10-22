@@ -51,10 +51,12 @@ const checks = [];
     for (const target of ['/m1', '/m1/reservations', '/m1/reservations/unavailable']) {
       await visit(target);
       assert.equal(await page.getByText('教学楼 A201', { exact: true }).count(), 0, 'Normal routes never show fixture rooms');
-      assert.match(await page.locator('main').innerText(), /未接入|接入中|尚未|暂未/);
+      assert.match(await page.locator('main').innerText(), /登录校园资源平台/);
+      assert.equal(new URL(page.url()).pathname, '/login');
     }
     await visit('/login');
-    assert.equal(await page.locator('input[type="password"]').count(), 0);
+    assert.equal(await page.locator('input[type="password"]').count(), 1, 'Production offers real identity login');
+    assert.equal(await page.getByRole('button', { name: '使用开发身份' }).count(), 0, 'Synthetic identity cannot be enabled in production');
     for (const target of ['https://example.com', '//example.com', '/%2f%2fexample.com', '/login', '/unknown-target']) {
       await visit('/login?redirect=' + encodeURIComponent(target));
       const hrefs = await page.locator('main a[href]').evaluateAll(nodes => nodes.map(node => node.href));
@@ -130,10 +132,8 @@ const checks = [];
     await visit('/m1/preview/reservations/unknown-example');
     await page.getByRole('heading', { name: '未找到此预约示例' }).waitFor();
     await page.getByRole('link', { name: '返回正式入口' }).click();
-    await page.getByRole('heading', { name: '座位查询服务尚未接入' }).waitFor();
+    await page.getByRole('heading', { name: '登录校园资源平台' }).waitFor();
     assert.equal(await page.locator('.m1-room').count(), 0);
-    await page.getByRole('button', { name: '查询座位', exact: true }).click();
-    await page.getByText('查询条件已检查；座位服务尚未接入，暂时无法获取实时结果。', { exact: true }).waitFor();
     checks.push('Reservation current/history/detail/missing examples and return to normal service state');
 
     await page.setViewportSize({ width: 375, height: 1000 });
@@ -156,7 +156,7 @@ const checks = [];
         await visit(target);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
         assert.equal(overflow, false, 'Horizontal overflow: ' + width + ' ' + target);
-        if (width <= 430 && target === '/m1') {
+        if (width <= 430 && target === '/m1/preview') {
           assert.ok(await page.locator('#m1-date').evaluate(el => parseFloat(getComputedStyle(el).fontSize) >= 16), 'Mobile inputs avoid focus zoom');
         }
       }
@@ -168,7 +168,7 @@ const checks = [];
     checks.push('1440/768/430/375/320px shared and module layouts');
 
     assert.deepEqual(errors, [], 'Browser JavaScript errors');
-    assert.deepEqual(businessRequests, [], 'Unavailable business APIs must not be called');
+    assert.deepEqual(businessRequests, [], 'Guest and explicit preview routes do not call business APIs');
     console.log(JSON.stringify({ base, checks, errors, businessRequests }, null, 2));
   } finally {
     await browser.close();

@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const filename = join(process.cwd(), 'contracts/m1-room-blocks.openapi.json');
+for (const name of readdirSync(join(process.cwd(), 'contracts')).filter(name => name.endsWith('.openapi.json'))) {
+const filename = join(process.cwd(), 'contracts', name);
 const document = JSON.parse(readFileSync(filename, 'utf8'));
 
 function requireValue(condition, message) {
@@ -37,3 +38,5 @@ function visit(value) {
 
 visit(document);
 console.log(`Checked ${operationIds.size} OpenAPI operations and local references.`);
+
+}

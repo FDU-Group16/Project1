@@ -8,7 +8,7 @@ FastAPI 服务运行时生成的 OpenAPI 页面只描述当时已注册的路由
 
 ## 2026-10-22 M1 / D-02 实施范围
 
-- D-02 主数据：[`d-master-data.openapi.json`](d-master-data.openapi.json) 与 [行为说明](d-master-data.md)，v0.1.0-proposed。
+- D-02 主数据：[`d-master-data.openapi.json`](d-master-data.openapi.json) 与 [行为说明](d-master-data.md)，v0.1.0（proposed）。
 - M1 公开业务：[`m1-public.openapi.json`](m1-public.openapi.json) 与 [行为说明](m1-public.md)，v0.1.0-proposed。
 - M1 写回提供方：[`m1-room-blocks.openapi.json`](m1-room-blocks.openapi.json)，v0.2.0-proposed；来源键、请求/响应形状兼容，明确本次用户选择的冲突规则及认证配置。
 - [D-01/03/04 消费需求](d-dependencies.md)仍为提案，提供方未实现。本次仅实现消费适配与显式开发/测试替身，不证明真实认证/通知/审计。

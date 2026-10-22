@@ -12,14 +12,14 @@
 | M1-07 | `pages/OperationsPage.vue` 日期筛选、总计/房间/座位统计，不展示学生身份 |
 | M1-08 | `pages/RoomStatusPage.vue` 分页 M1/M2/M3 来源记录；前端不调用内部写回接口 |
 
-接口：[M1 public v0.1.0 proposed](../../../../../../contracts/m1-public.md)。此版本正在当前任务实现，仍需组内评审；真实 D 身份/通知/审计不在本次范围。固定展示示例仍独立保留在 `/m1/preview/*`，与实时页面数据和写操作隔离。
+接口：[M1 public v0.1.0 proposed](../../../../../../contracts/m1-public.md)。此版本已在当前任务实现，仍需组内评审；真实 D 身份/通知/审计不在本次范围。固定展示示例仍独立保留在 `/m1/preview/*`，与实时页面数据和写操作隔离。
 
 ## 状态与验证
 
 实时页面有加载、空态、失败、未登录与权限保护；表单支持键盘；布局沿用既有视觉风格，新增样式以 scoped 引用公共 feature 样式。用户可查询/重试，非幂等 D 创建失败需先核对列表；M1 预约和再预约在同一未确认尝试中重用幂等键。
 
 - 2026-10-22 `npm --prefix apps/web run build` 和 `npm --prefix apps/web run typecheck` 通过；`git diff --check` 通过。
-- 真实 IAB 已检查游客跳转、开发身份显式标识、服务不可用状态、桌面布局；M1 搜索与 D-02 新建表单在 320px 无横向溢出（scrollWidth=clientWidth=320），移动菜单 Escape 关闭并恢复焦点、学生→管理员切换后重新构建页面，浏览器运行错误为空。完整真实 HTTP 快乐路径及根检查由父任务验收记录补充，未完成前不作通过声明。
+- 真实 IAB 已检查游客跳转、开发身份显式标识、服务不可用状态、桌面布局；M1 搜索与 D-02 新建表单在 320px 无横向溢出（scrollWidth=clientWidth=320），移动菜单 Escape 关闭并恢复焦点、学生→管理员切换后重新构建页面，浏览器运行错误为空。根检查与后端 PostgreSQL/HTTP 验证见 [父任务记录](../../../../../../services/m1/tasks/2026-10-22-completion.md)；[真实API业务Playwright验收](../../../../tests/business.browser.cjs)已通过：`WEB_BUSINESS_TEST=1`、`http://127.0.0.1:5173`，连接真实API和PostgreSQL、显式开发身份；插座搜索→预约→取消→再次预约→取消，切换EE读取CS详情404并清空，学生D管理页403守卫，实际运营统计、M1来源和每日签到码显示均通过，JavaScript错误0。
 - 未部署。没有真实 D-01/D-03/D-04 联调证据；M2/M3 提供方端到端写回仍待各组接入。
 
-下一步：父任务完成 PostgreSQL/HTTP 集成与浏览器验收，按需求分提交；受影响组评审后才能合并，真实身份可用后按库存替换开发依赖。
+下一步：父任务登记分需求提交记录；实际API业务浏览器验收已在[主任务](../../../../../../services/m1/tasks/2026-10-22-completion.md)及[脚本](../../../../tests/business.browser.cjs)中记录；受影响组评审后才能合并，真实身份可用后按库存替换开发依赖。

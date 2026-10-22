@@ -14,5 +14,6 @@ fi
 node scripts/check-contracts.mjs
 "${python_cmd[@]}" -m compileall -q services
 "${python_cmd[@]}" scripts/smoke.py
+"${python_cmd[@]}" scripts/test-business.py
 npm --prefix apps/web run typecheck
 npm --prefix apps/web run build
