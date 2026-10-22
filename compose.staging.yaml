@@ -1,0 +1,74 @@
+name: campus-resource-staging
+
+x-api: &api
+  build:
+    context: .
+    dockerfile: docker/api.Dockerfile
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: campus-resource-postgres:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: campus
+      POSTGRES_USER: campus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the staging .env file}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus -d campus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  m1-api:
+    <<: *api
+    image: campus-resource-m1:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
+    environment:
+      APP_MODULE: "services.m1.main:app"
+      PORT: "3101"
+    ports:
+      - "127.0.0.1:3101:3101"
+
+  m2-api:
+    <<: *api
+    image: campus-resource-m2:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
+    environment:
+      APP_MODULE: "services.m2.main:app"
+      PORT: "3102"
+    ports:
+      - "127.0.0.1:3102:3102"
+
+  m3-api:
+    <<: *api
+    image: campus-resource-m3:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
+    environment:
+      APP_MODULE: "services.m3.main:app"
+      PORT: "3103"
+    ports:
+      - "127.0.0.1:3103:3103"
+
+  d-api:
+    <<: *api
+    image: campus-resource-d:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
+    environment:
+      APP_MODULE: "services.d.main:app"
+      PORT: "3104"
+    ports:
+      - "127.0.0.1:3104:3104"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    image: campus-resource-web:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
+    restart: unless-stopped
+    ports:
+      - "${STAGING_WEB_BIND_ADDRESS:-127.0.0.1}:8080:80"
+
+volumes:
+  postgres-data:
