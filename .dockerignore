@@ -1,0 +1,10 @@
+.git
+node_modules
+**/node_modules
+**/dist
+.pnpm-store
+.venv
+.uv-cache
+__pycache__
+.env
+*.log
