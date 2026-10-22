@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { nextTick } from 'vue';
+import { nextTick, watch } from 'vue';
+import { auth, restoreIdentity, hasPermission } from '../shared/auth';
 import { m1Routes } from '../modules/m1/routes';
 import { m2Routes } from '../modules/m2/routes';
 import { m3Routes } from '../modules/m3/routes';
@@ -39,6 +40,16 @@ export const router = createRouter({
     if (savedPosition) return savedPosition;
     return to.path === from.path ? false : { top: 0 };
   },
+});
+
+router.beforeEach(async to => {
+  await restoreIdentity();
+  if (to.meta.requiresAuth && !auth.session) return { path: '/login', query: { redirect: to.fullPath } };
+  if (Array.isArray(to.meta.permissionsAny) && !to.meta.permissionsAny.some(permission => typeof permission === 'string' && hasPermission(permission))) return '/403';
+  if (typeof to.meta.permission === 'string' && !hasPermission(to.meta.permission)) return '/403';
+});
+watch(() => auth.epoch, () => {
+  if (!auth.session && router.currentRoute.value.meta.requiresAuth) void router.replace({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } });
 });
 
 router.afterEach(async (to, from, failure) => {

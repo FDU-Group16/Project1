@@ -18,7 +18,7 @@ const services = [
         <h1 id="home-title">给专注留一个位置，<br>让安排更从容。</h1>
         <p>自习、活动与日常服务，汇聚在一个入口。<br class="desktop-break">找到适合你的空间，把时间留给重要的事。</p>
         <div class="hero-actions"><RouterLink to="/m1" class="ui-button ui-button--primary">查找座位<AppIcon name="arrow-right" :size="18" /></RouterLink><RouterLink to="/m1/preview" class="ui-link">浏览界面示例<AppIcon name="chevron-right" :size="16" /></RouterLink></div>
-        <small class="hero-status"><AppIcon name="info" :size="14" />预约与身份服务接入中，示例可提前浏览。</small>
+        <small class="hero-status"><AppIcon name="info" :size="14" />预约功能需登录后使用，统一身份服务可用性以登录结果为准。</small>
       </div>
       <div class="hero-art" aria-hidden="true">
         <svg viewBox="0 0 320 300" fill="none" class="study-scene">
@@ -51,7 +51,7 @@ const services = [
         <RouterLink :to="service.to" class="ui-link">{{ service.label }}<AppIcon name="arrow-right" :size="16" /></RouterLink>
       </article>
     </div>
-    <div class="home-note"><AppIcon name="shield" :size="19" /><p>界面示例使用合成数据，仅供浏览。实际预约需等待服务开放并完成身份验证。</p></div>
+    <div class="home-note"><AppIcon name="shield" :size="19" /><p>界面示例使用合成数据，仅供浏览。实际预约通过后端校验身份、开放时间与座位冲突。</p></div>
   </section>
 </template>
 

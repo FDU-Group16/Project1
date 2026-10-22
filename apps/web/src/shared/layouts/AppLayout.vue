@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import AppIcon from '../components/AppIcon.vue';
+import { auth } from '../auth';
 type NavigationItem = { label: string; to: string; icon?: string };
 withDefaults(defineProps<{
   navigation: NavigationItem[];
@@ -39,7 +40,7 @@ function closeMenu() {
           <RouterLink v-for="item in navigation" :key="item.to" :to="item.to" class="top-link" :class="{ 'is-current': isModuleActive(item.to) }" :aria-current="isModuleActive(item.to) ? 'page' : undefined">{{ item.label }}</RouterLink>
         </nav>
         <RouterLink v-if="!compact" :to="{ path: '/login', query: { redirect: route.fullPath } }" class="account-link">
-          <span class="account-icon"><AppIcon name="user" :size="17" /></span><span>登录</span>
+          <span class="account-icon"><AppIcon name="user" :size="17" /></span><span>{{ auth.session?.user.displayName || '登录' }}</span>
         </RouterLink>
         <RouterLink v-else to="/" class="return-home"><AppIcon name="arrow-left" :size="16" />返回首页</RouterLink>
       </div>
@@ -67,6 +68,7 @@ function closeMenu() {
       <div class="main-column">
         <main id="main-content" tabindex="-1" class="main-content" :class="{ 'main-content--compact': compact }">
           <div v-if="sectionTitle && !compact" class="breadcrumb" aria-label="当前位置"><RouterLink to="/">校园资源</RouterLink><AppIcon name="chevron-right" :size="13" /><span>{{ sectionTitle }}</span><span v-if="preview" class="breadcrumb-preview">界面示例</span></div>
+          <div v-if="auth.session?.synthetic" class="development-banner" role="status">开发联调 · 合成身份：{{ auth.session.user.displayName }}。业务请求访问真实后端，身份验证尚未接入。</div>
           <slot />
         </main>
         <footer class="app-footer"><span>校园资源服务平台</span><span>让每一份校园资源，恰好被需要。</span></footer>
@@ -75,6 +77,7 @@ function closeMenu() {
   </div>
 </template>
 <style scoped>
+.development-banner { border: 1px solid #d4a251; background: #fff8e9; color: #82520f; border-radius: 8px; padding: 12px 15px; margin-bottom: 24px; font-size: 12px; line-height: 1.8; }
 .app-shell { min-height: 100vh; }
 .app-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .header-inner { display: flex; align-items: center; gap: 48px; max-width: 1600px; min-height: 82px; margin: 0 auto; padding: 16px 40px; }
