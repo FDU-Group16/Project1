@@ -122,6 +122,20 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(self.book(key='other-seat',user=winner,seat='s2').status_code,409)
 
 
+    def test_m103_half_open_boundary_and_cancel(self):
+        first=self.book().json()
+        self.assertEqual(self.book(key='adjacent',start=3,end=4).status_code,200)
+        path='/api/v1/reservations/'+first['id']+'/cancel'
+        self.assertEqual(self.client.post(path,headers=self.headers('dev-student-ee')).status_code,404)
+        self.assertEqual(self.client.post(path,headers=self.headers()).status_code,200)
+        self.assertEqual(self.client.post(path,headers=self.headers()).status_code,200)
+        self.assertEqual(self.book(key='replacement').status_code,200)
+        self.clock=BASE+timedelta(hours=2)
+        replacement=self.client.get('/api/v1/reservations',headers=self.headers()).json()['items']
+        current=next(r for r in replacement if r['startsAt']==self.payload()['startsAt'])
+        self.assertEqual(self.client.post('/api/v1/reservations/'+current['id']+'/cancel',headers=self.headers()).status_code,409)
+
+
     def test_m104_owner_room_day_and_time_window(self):
         reservation=self.book().json()
         path='/api/v1/reservations/'+reservation['id']+'/check-in'
@@ -160,6 +174,21 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,200)
         with patch.dict(os.environ,{'M1_CHECKIN_SECRET':''}):
             self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,503)
+
+
+    def test_m105_exact_deadlines_restart_and_breach_idempotency(self):
+        reservation=self.book().json()
+        for minutes,expected in [(104,0),(105,1),(129,1),(130,2),(134,2),(135,3)]:
+            self.clock=BASE+timedelta(minutes=minutes)
+            scheduler.process_due();scheduler.process_due()
+            with core.DB.connection() as conn:
+                events=conn.execute("SELECT count(*) AS n FROM outbox WHERE kind='notification'").fetchone()['n']
+            self.assertEqual(events,expected)
+        with core.DB.connection() as conn:
+            self.assertEqual(conn.execute('SELECT count(*) AS n FROM breaches').fetchone()['n'],1)
+        response=self.client.get('/api/v1/reservations/'+reservation['id'],headers=self.headers())
+        self.assertEqual(response.json()['status'],'NO_SHOW')
+        self.assertEqual(self.book(key='released',user='dev-student-ee',start=3,end=4).status_code,200)
 
 
     def test_m105_downtime_skips_obsolete_reminders(self):
@@ -241,6 +270,16 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(scheduler.flush_outbox()['suppressed'],1)
         with core.DB.connection() as conn:
             self.assertEqual(conn.execute("SELECT state FROM outbox WHERE kind='notification'").fetchone()['state'],'SUPPRESSED')
+
+
+    def test_m106_history_is_private_and_rebook_checks_current_rules(self):
+        reservation=self.book().json()
+        self.client.post('/api/v1/reservations/'+reservation['id']+'/cancel',headers=self.headers())
+        self.assertEqual(self.client.get('/api/v1/reservations?scope=history',headers=self.headers()).json()['total'],1)
+        self.assertEqual(self.client.get('/api/v1/reservations?scope=history',headers=self.headers('dev-student-ee')).json()['total'],0)
+        self.rooms[0]['active']=False
+        result=self.client.post('/api/v1/reservations/'+reservation['id']+'/rebook',json={'startsAt':self.payload()['startsAt'],'endsAt':self.payload()['endsAt']},headers=self.headers(key='rebook'))
+        self.assertEqual(result.status_code,409)
 
 
     def test_real_identity_fails_closed_and_validates_shape(self):
