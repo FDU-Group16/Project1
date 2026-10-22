@@ -83,6 +83,7 @@ class M1Behavior(unittest.TestCase):
         result=self.search()
         self.assertEqual(result.status_code,200)
         self.assertEqual({i['roomId'] for i in result.json()['items']},{'public','cs'})
+        self.assertEqual(self.book(room='ee').status_code,403)
         self.assertEqual(self.client.get('/api/v1/seats',params=self.payload()).status_code,401)
 
 
@@ -92,6 +93,38 @@ class M1Behavior(unittest.TestCase):
         self.rooms[1]['active']=False
         self.assertEqual([i['id'] for i in self.search().json()['items']],['public-s2'])
         self.assertEqual(self.search(startsAt=utc_text(BASE+timedelta(hours=15)),endsAt=utc_text(BASE+timedelta(hours=16))).json()['items'],[])
+
+
+    def test_m103_duration_whole_hour_window_and_utc_validation(self):
+        for start,end in [(2,7),(2,2),(2,2.5),(-1,1),(167,169)]:
+            self.assertEqual(self.book(start=start,end=end).status_code,422)
+        body=self.payload();body['startsAt']='2026-10-22T10:00:00+08:00'
+        self.assertEqual(self.client.post('/api/v1/reservations',json=body,headers=self.headers(key='x')).status_code,422)
+        body['startsAt']='20261022T020000Z'
+        self.assertEqual(self.client.post('/api/v1/reservations',json=body,headers=self.headers(key='x')).status_code,422)
+
+
+    def test_m103_settings_and_idempotency(self):
+        self.assertEqual(self.client.put('/api/v1/settings',json={'maxReservationHours':6},headers=self.headers()).status_code,403)
+        self.assertEqual(self.client.put('/api/v1/settings',json={'maxReservationHours':6},headers=self.headers('dev-room-admin')).status_code,200)
+        first=self.book(end=7)
+        self.assertEqual(first.status_code,200,first.text)
+        self.assertEqual(self.book(end=7).json()['id'],first.json()['id'])
+        self.assertEqual(self.book(end=6).status_code,409)
+        self.assertEqual(self.client.post('/api/v1/reservations',json=self.payload(),headers=self.headers()).status_code,422)
+
+
+    def test_m103_concurrent_seat_and_user_conflicts(self):
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results=list(executor.map(lambda user:self.book(key=user,user=user),['dev-student-cs','dev-student-ee']))
+        self.assertEqual(sorted(r.status_code for r in results),[200,409])
+        winner=next(r.json()['userId'] for r in results if r.status_code==200)
+        self.assertEqual(self.book(key='other-seat',user=winner,seat='s2').status_code,409)
+
+
+    def test_m102_user_overlap_hides_unbookable_seats(self):
+        self.book()
+        self.assertEqual(self.search().json()['items'],[])
 
 
     def test_real_identity_fails_closed_and_validates_shape(self):
