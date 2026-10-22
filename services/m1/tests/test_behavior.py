@@ -282,6 +282,17 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(result.status_code,409)
 
 
+    def test_m107_statistics_facts_and_permissions(self):
+        self.book()
+        cancelled=self.book(key='other',seat='s2',start=3,end=4).json()
+        self.client.post('/api/v1/reservations/'+cancelled['id']+'/cancel',headers=self.headers())
+        params={'startsAt':utc_text(BASE),'endsAt':utc_text(BASE+timedelta(hours=5))}
+        self.assertEqual(self.client.get('/api/v1/operations',params=params,headers=self.headers()).status_code,403)
+        result=self.client.get('/api/v1/operations',params=params,headers=self.headers('dev-operator')).json()
+        self.assertEqual(result['totals'],{'reservations':2,'checkedIn':0,'cancelled':1,'noShows':0,'reservedHours':1.0})
+        self.assertNotIn('userId',str(result))
+
+
     def test_real_identity_fails_closed_and_validates_shape(self):
         with patch.dict(os.environ,{'M1_USE_DEV_DEPENDENCIES':'0'}):
             with patch.object(dependencies,'request_d',side_effect=Problem(503,'DEPENDENCY_UNAVAILABLE','Unavailable')):

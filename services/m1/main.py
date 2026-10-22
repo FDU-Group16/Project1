@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from services.common import create_app
 from services.platform import install_errors
-from services.m1 import core,dependencies,search,reservations,checkin,history
+from services.m1 import core,dependencies,search,reservations,checkin,history,operations
 
 
 @asynccontextmanager
@@ -15,7 +15,7 @@ async def lifespan(app):
 app=create_app('m1-api')
 app.router.lifespan_context=lifespan
 install_errors(app)
-for router in (search.router,reservations.router,checkin.router,history.router):
+for router in (search.router,reservations.router,checkin.router,history.router,operations.router):
     app.include_router(router)
 
 
