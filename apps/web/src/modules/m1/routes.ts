@@ -4,6 +4,7 @@ export const m1Routes: RouteRecordRaw[] = [
   { path: '/m1/breaches', component: () => import('./pages/BreachesPage.vue'), meta: { title: '失约记录', section: 'm1', requiresAuth: true, permission: 'seat:reserve' } },
   { path: '/m1/settings', component: () => import('./pages/SettingsPage.vue'), meta: { title: '预约设置', section: 'm1', requiresAuth: true, permission: 'room:manage' } },
   { path: '/m1/operations', component: () => import('./pages/OperationsPage.vue'), meta: { title: '使用统计', section: 'm1', requiresAuth: true, permissionsAny: ['operations:read', 'room:manage'] } },
+  { path: '/m1/rooms/:roomId/provenance', component: () => import('./pages/RoomStatusPage.vue'), meta: { title: '房间状态来源', section: 'm1', requiresAuth: true, permissionsAny: ['operations:read', 'room:manage'] } },
   {
     path: '/m1',
     name: 'm1-home',
