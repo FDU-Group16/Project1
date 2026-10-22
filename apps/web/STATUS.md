@@ -20,10 +20,11 @@ Vue Router 已锁定为 `4.6.4`；没有状态管理或 UI 组件库。公共组
 
 ## 验证与发布证据
 
+- 本批界面实现 `3593153` 已在 2026-10-22 18:16:31（Asia/Shanghai）通过 [测试部署](https://github.com/FDU-Group16/Project1/actions/runs/39761575377) 健康激活；[线上站点](https://pj1.756888.xyz) 已通过同一 7 组浏览器验收，产物与本地相同。新 Vue 界面可见，真实业务能力仍按模块记录标注。完整 SHA、CI 和外部证据见 [实施记录](docs/vue-interface-implementation.md#提交部署与外部核验)。
 - 2026-10-22 本批 Vue 界面的根检查及最终生产构建通过；开发服务和生产预览均通过 7 组真实浏览器验收，包含全部入口、筛选/详情/安全返回、键盘和 320–1440px 响应式，无 JavaScript 错误。命令、范围与实际发布证据见 [实施记录](docs/vue-interface-implementation.md)。真实身份和业务接口未接入，不能据此声明业务已验收。
 - 根目录 `bash scripts/check.sh` 通过，覆盖契约基础检查、后端健康检查、Vue 类型检查和生产构建。
 - 浏览器检查与本次目录重构范围见 [前端骨架任务](docs/frontend-scaffold.md)。该记录包含现有 Vite 依赖告警，升级待单独处理。
-- 上述页面与浏览器证据属于本机工作区；远端工程部署证据见下项，不表示业务页面或接口已经验收。人工评审与生产发布尚未登记，未创建 PR 或发布 tag。
+- 旧骨架的本机及远端工程证据保留在相应任务和下项；本批界面发布以上述新记录为准。真实业务接口验收、团队人工评审与生产发布尚未登记，未创建 PR 或发布 tag。
 - 2026-10-22 镜像复用已随提交 `86679077cd1fcd1dbcd6ace993f3b8d9c6bb4211` 推送到 `develop`，[Staging deployment run 39747752233](https://github.com/FDU-Group16/Project1/actions/runs/39747752233) 全部成功：检查 29 秒、发布 1 分 40 秒、部署 56 秒。API/Web 构建与 GHCR 发布、固定 PostgreSQL 副本发布、服务器只读认证/拉取与健康激活均成功；服务器于 2026-10-22 16:29:43（Asia/Shanghai）报告该提交健康。本次 `bash scripts/check.sh`、9 项部署边界行为测试、关键复用行为破坏对照、Compose 配置、actionlint、工作流结构及 Bash 语法检查通过。源码、完整证据与验证边界见 [镜像复用任务](../../docs/tasks/2026-10-22-image-reuse.md)。未改变前端入口或业务接口，契约及 schema 无变更，无新增迁移；重复运行缓存命中、真实回退、业务与数据库读写、公网 HTTPS 和外部访问尚未验证。
 
 ## 依赖与待办
