@@ -86,14 +86,12 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(self.book(room='ee').status_code,403)
         self.assertEqual(self.client.get('/api/v1/seats',params=self.payload()).status_code,401)
 
-
     def test_m102_socket_inactive_and_closed_room_filters(self):
         self.assertTrue(all(i['hasSocket'] for i in self.search(hasSocket='true').json()['items']))
         self.rooms[0]['seats'][0]['active']=False
         self.rooms[1]['active']=False
         self.assertEqual([i['id'] for i in self.search().json()['items']],['public-s2'])
         self.assertEqual(self.search(startsAt=utc_text(BASE+timedelta(hours=15)),endsAt=utc_text(BASE+timedelta(hours=16))).json()['items'],[])
-
 
     def test_m103_duration_whole_hour_window_and_utc_validation(self):
         for start,end in [(2,7),(2,2),(2,2.5),(-1,1),(167,169)]:
@@ -102,7 +100,6 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(self.client.post('/api/v1/reservations',json=body,headers=self.headers(key='x')).status_code,422)
         body['startsAt']='20261022T020000Z'
         self.assertEqual(self.client.post('/api/v1/reservations',json=body,headers=self.headers(key='x')).status_code,422)
-
 
     def test_m103_settings_and_idempotency(self):
         self.assertEqual(self.client.put('/api/v1/settings',json={'maxReservationHours':6},headers=self.headers()).status_code,403)
@@ -113,14 +110,12 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(self.book(end=6).status_code,409)
         self.assertEqual(self.client.post('/api/v1/reservations',json=self.payload(),headers=self.headers()).status_code,422)
 
-
     def test_m103_concurrent_seat_and_user_conflicts(self):
         with ThreadPoolExecutor(max_workers=2) as executor:
             results=list(executor.map(lambda user:self.book(key=user,user=user),['dev-student-cs','dev-student-ee']))
         self.assertEqual(sorted(r.status_code for r in results),[200,409])
         winner=next(r.json()['userId'] for r in results if r.status_code==200)
         self.assertEqual(self.book(key='other-seat',user=winner,seat='s2').status_code,409)
-
 
     def test_m103_half_open_boundary_and_cancel(self):
         first=self.book().json()
@@ -134,7 +129,6 @@ class M1Behavior(unittest.TestCase):
         replacement=self.client.get('/api/v1/reservations',headers=self.headers()).json()['items']
         current=next(r for r in replacement if r['startsAt']==self.payload()['startsAt'])
         self.assertEqual(self.client.post('/api/v1/reservations/'+current['id']+'/cancel',headers=self.headers()).status_code,409)
-
 
     def test_m104_owner_room_day_and_time_window(self):
         reservation=self.book().json()
@@ -151,7 +145,6 @@ class M1Behavior(unittest.TestCase):
         self.clock+=timedelta(minutes=15)
         self.assertEqual(self.client.post(path,json={'code':code},headers=self.headers()).status_code,409)
 
-
     def test_m104_deadline_rechecked_after_lock_wait(self):
         reservation=self.book().json()
         self.clock=BASE+timedelta(hours=2,minutes=14,seconds=59)
@@ -163,18 +156,15 @@ class M1Behavior(unittest.TestCase):
             result=self.client.post('/api/v1/reservations/'+reservation['id']+'/check-in',json={'code':checkin.daily_code('public',self.clock)},headers=self.headers())
         self.assertEqual(result.status_code,409)
 
-
     def test_m102_user_overlap_hides_unbookable_seats(self):
         self.book()
         self.assertEqual(self.search().json()['items'],[])
-
 
     def test_m104_code_permission_and_missing_secret(self):
         self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers()).status_code,403)
         self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,200)
         with patch.dict(os.environ,{'M1_CHECKIN_SECRET':''}):
             self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,503)
-
 
     def test_m105_exact_deadlines_restart_and_breach_idempotency(self):
         reservation=self.book().json()
@@ -190,7 +180,6 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(response.json()['status'],'NO_SHOW')
         self.assertEqual(self.book(key='released',user='dev-student-ee',start=3,end=4).status_code,200)
 
-
     def test_m105_downtime_skips_obsolete_reminders(self):
         self.book()
         self.clock=BASE+timedelta(hours=4)
@@ -199,13 +188,11 @@ class M1Behavior(unittest.TestCase):
             events=conn.execute("SELECT payload FROM outbox WHERE kind='notification'").fetchall()
         self.assertEqual([r['payload']['kind'] for r in events],['NO_SHOW'])
 
-
     def test_m105_expired_reservation_does_not_block_without_scheduler(self):
         self.book(end=5)
         self.clock=BASE+timedelta(hours=2,minutes=15)
         self.assertEqual(self.book(key='new',user='dev-student-ee',start=3,end=4).status_code,200)
         self.assertIn('public-s1',[item['id'] for item in self.search(startsAt=utc_text(BASE+timedelta(hours=4)),endsAt=utc_text(BASE+timedelta(hours=5))).json()['items']])
-
 
     def test_m105_outbox_retry_and_simulated_not_delivered(self):
         self.book()
@@ -217,7 +204,6 @@ class M1Behavior(unittest.TestCase):
         self.assertGreater(scheduler.flush_outbox()['simulated'],0)
         with core.DB.connection() as conn:
             self.assertTrue(all(r['state']=='SIMULATED' for r in conn.execute('SELECT state FROM outbox').fetchall()))
-
 
     def test_m105_failed_reminder_is_suppressed_after_cancellation(self):
         reservation=self.book().json()
@@ -237,7 +223,6 @@ class M1Behavior(unittest.TestCase):
         self.assertIsNone(notification['delivered_at'])
         self.assertTrue(all(row['state']=='SIMULATED' for row in audits))
 
-
     def test_m105_failed_reminders_expire_but_no_show_still_delivers(self):
         self.book()
         self.clock=BASE+timedelta(hours=1,minutes=45)
@@ -256,7 +241,6 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual({row['payload']['kind']:row['state'] for row in events},
             {'BEFORE_START':'SUPPRESSED','CHECKIN_REMINDER':'SUPPRESSED','NO_SHOW':'SIMULATED'})
 
-
     def test_m105_failed_reminder_suppressed_after_checkin(self):
         reservation=self.book().json()
         self.clock=BASE+timedelta(hours=2,minutes=10)
@@ -271,7 +255,6 @@ class M1Behavior(unittest.TestCase):
         with core.DB.connection() as conn:
             self.assertEqual(conn.execute("SELECT state FROM outbox WHERE kind='notification'").fetchone()['state'],'SUPPRESSED')
 
-
     def test_m106_history_is_private_and_rebook_checks_current_rules(self):
         reservation=self.book().json()
         self.client.post('/api/v1/reservations/'+reservation['id']+'/cancel',headers=self.headers())
@@ -280,7 +263,6 @@ class M1Behavior(unittest.TestCase):
         self.rooms[0]['active']=False
         result=self.client.post('/api/v1/reservations/'+reservation['id']+'/rebook',json={'startsAt':self.payload()['startsAt'],'endsAt':self.payload()['endsAt']},headers=self.headers(key='rebook'))
         self.assertEqual(result.status_code,409)
-
 
     def test_m107_statistics_facts_and_permissions(self):
         self.book()
@@ -292,6 +274,38 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(result['totals'],{'reservations':2,'checkedIn':0,'cancelled':1,'noShows':0,'reservedHours':1.0})
         self.assertNotIn('userId',str(result))
 
+    def test_m108_revision_tombstone_union_and_payload_identity(self):
+        first=self.block()
+        self.assertEqual(first.status_code,200,first.text)
+        self.assertEqual(self.block().json()['appliedAt'],first.json()['appliedAt'])
+        self.assertEqual(self.block(status='RELEASED').status_code,409)
+        self.assertEqual(self.block(key='second').status_code,200)
+        self.assertEqual(self.block(revision=2,status='RELEASED').status_code,200)
+        self.assertEqual(self.book().status_code,409)
+        self.assertEqual(self.block().status_code,409)
+        self.assertEqual(self.block(key='second',revision=2,status='RELEASED').status_code,200)
+        self.assertEqual(self.book().status_code,200)
+        self.assertEqual(self.block(key='tombstone',revision=3,status='RELEASED').status_code,200)
+        self.assertEqual(self.block(key='tombstone',revision=2).status_code,409)
+
+    def test_m108_m2_conflict_m3_retains_booking_and_provenance(self):
+        booking=self.book().json()
+        response=self.block(source='m2',endsAt=self.payload()['endsAt'])
+        self.assertEqual(response.status_code,409)
+        self.assertEqual(response.json()['code'],'ROOM_OCCUPANCY_CONFLICT')
+        self.assertEqual(self.block().status_code,200)
+        self.assertEqual(self.client.get('/api/v1/reservations/'+booking['id'],headers=self.headers()).json()['status'],'RESERVED')
+        self.assertEqual(self.block(source='m2',key='later',startsAt=utc_text(BASE+timedelta(hours=3)),endsAt=utc_text(BASE+timedelta(hours=4))).status_code,200)
+        result=self.client.get('/api/v1/rooms/public/provenance',headers=self.headers('dev-operator')).json()
+        self.assertEqual({row['sourceSystem'] for row in result['items']},{'M1','M2','M3'})
+
+    def test_m108_service_identity_and_invalid_interval(self):
+        payload={'roomId':'public','revision':1,'status':'ACTIVE','startsAt':self.payload()['startsAt'],'endsAt':self.payload()['endsAt']}
+        self.assertEqual(self.client.put('/internal/v1/room-blocks/m2/id',json=payload,headers={'Authorization':'Bearer test-m3'}).status_code,403)
+        self.assertEqual(self.client.put('/internal/v1/room-blocks/m2/id',json=payload).status_code,401)
+        self.assertEqual(self.block(endsAt=self.payload()['startsAt']).status_code,422)
+        self.assertEqual(self.block(endsAt=None).status_code,422)
+        self.assertEqual(self.block(roomId='missing').status_code,404)
 
     def test_real_identity_fails_closed_and_validates_shape(self):
         with patch.dict(os.environ,{'M1_USE_DEV_DEPENDENCIES':'0'}):
@@ -302,7 +316,6 @@ class M1Behavior(unittest.TestCase):
         with patch.dict(os.environ,{'APP_ENV':'production'}):
             self.assertEqual(self.search().status_code,503)
 
-
     def test_outbox_receipt_timestamp_is_not_delivery_timestamp(self):
         self.book()
         with patch.object(dependencies,'deliver',return_value='ACCEPTED'):
@@ -310,7 +323,6 @@ class M1Behavior(unittest.TestCase):
         with core.DB.connection() as conn:
             rows=conn.execute('SELECT * FROM outbox').fetchall()
         self.assertTrue(all(r['state']=='ACCEPTED' and r['acknowledged_at'] is not None and r['delivered_at'] is None for r in rows))
-
 
     def test_real_delivery_accepted_is_not_delivery(self):
         with patch.dict(os.environ,{'M1_USE_DEV_DEPENDENCIES':'0','D_NOTIFICATION_TOKEN':'test'}):
