@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { m1Api, formatTime, statusLabel, type Reservation } from '../api';
+import { errorMessage } from '../../../shared/api/client';
+import RequestState from '../../../shared/components/RequestState.vue';
+import CheckInForm from '../components/CheckInForm.vue';
+import RebookForm from '../components/RebookForm.vue';
+const route = useRoute(); const item = ref<Reservation | null>(null); const loading = ref(false); const error = ref(''); const actionError = ref(''); const busy = ref(false); const confirmCancel = ref(false); const now = ref(Date.now());
+const timer = setInterval(() => { now.value = Date.now(); }, 10_000); onUnmounted(() => clearInterval(timer));
+const cancellable = computed(() => item.value?.status === 'RESERVED' && Date.parse(item.value.startsAt) > now.value);
+const historical = computed(() => item.value && (['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(item.value.status) || Date.parse(item.value.endsAt) <= now.value));
+async function load() { loading.value = true; error.value = ''; try { item.value = await m1Api.reservation(String(route.params.id)); } catch (cause) { error.value = errorMessage(cause); } finally { loading.value = false; } }
+onMounted(load);
+async function cancel() { if (!item.value || busy.value) return; busy.value = true; actionError.value = ''; try { item.value = await m1Api.cancel(item.value.id); confirmCancel.value = false; } catch (cause) { actionError.value = errorMessage(cause); } finally { busy.value = false; } }
+</script>
+<template><div><RouterLink to="/m1/reservations" class="ui-link back">← 返回我的预约</RouterLink><header class="feature-header"><p class="ui-eyebrow">RESERVATION DETAILS</p><h1>预约详情</h1><p>查看座位、到场签到与使用状态。</p></header><RequestState :loading="loading" :error="error" @retry="load" /><template v-if="item && !loading && !error"><section class="feature-panel ui-panel"><div class="feature-row"><div><h2>{{ item.roomName }} · {{ item.seatNumber }} 号座位</h2><p>北京时间</p></div><span class="ui-badge">{{ statusLabel[item.status] }}</span></div><dl class="feature-details"><div><dt>开始时间</dt><dd>{{ formatTime(item.startsAt) }}</dd></div><div><dt>结束时间</dt><dd>{{ formatTime(item.endsAt) }}</dd></div><div><dt>预约编号</dt><dd>{{ item.id }}</dd></div><div v-if="item.checkedInAt"><dt>签到时间</dt><dd>{{ formatTime(item.checkedInAt) }}</dd></div></dl><p v-if="item.dependencyMode && item.dependencyMode !== 'real'" class="feature-note">依赖模式：{{ item.dependencyMode }}</p><p v-if="actionError" class="feature-error" role="alert">{{ actionError }}</p><div class="feature-actions"><button class="ui-button" :disabled="busy" @click="load">刷新状态</button><button v-if="cancellable && !confirmCancel" class="ui-button" :disabled="busy" @click="confirmCancel = true">取消预约</button></div><div v-if="confirmCancel && cancellable" class="cancel-confirm" role="group" aria-label="确认取消预约"><p>确认取消这次预约？取消后座位将重新开放。</p><div class="feature-actions"><button class="ui-button ui-button--primary" :disabled="busy" @click="cancel">{{ busy ? '正在取消…' : '确认取消' }}</button><button class="ui-button" :disabled="busy" @click="confirmCancel = false">保留预约</button></div></div></section><CheckInForm v-if="item.status === 'RESERVED'" :reservation="item" @updated="item = $event" /><RebookForm v-if="historical" :reservation-id="item.id" /><p class="feature-note">预约状态以服务端为准。通知服务尚待接入，请通过本页确认操作结果。</p></template></div></template>
+<style scoped src="../../../shared/styles/feature.css"></style><style scoped>.back{margin-bottom:24px;font-size:13px}.cancel-confirm{margin-top:24px;padding-top:20px;border-top:1px solid var(--color-border)}.cancel-confirm p{font-size:14px}</style>

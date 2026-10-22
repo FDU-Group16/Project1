@@ -18,7 +18,7 @@ export const m1Routes: RouteRecordRaw[] = [
   {
     path: '/m1/reservations',
     name: 'm1-reservations',
-    component: () => import('./pages/ReservationsPage.vue'),
+    component: () => import('./pages/LiveReservationsPage.vue'),
     meta: { title: '我的预约', section: 'm1', requiresAuth: true },
   },
   {
@@ -31,7 +31,7 @@ export const m1Routes: RouteRecordRaw[] = [
   {
     path: '/m1/reservations/:id',
     name: 'm1-reservation-detail',
-    component: () => import('./pages/ReservationDetailPage.vue'),
+    component: () => import('./pages/LiveReservationDetailPage.vue'),
     meta: { title: '预约详情', section: 'm1', requiresAuth: true },
   },
   {
