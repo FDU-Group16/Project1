@@ -5,8 +5,18 @@ description = "Campus resource platform service scaffold"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.158,<0.159",
+    "psycopg[binary]>=3.2,<4",
     "uvicorn>=0.30,<1",
 ]
 
 [tool.uv]
 package = false
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+]
