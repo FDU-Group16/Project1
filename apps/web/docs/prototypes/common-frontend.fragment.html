@@ -1,0 +1,383 @@
+<div id="campus-ui-plan" aria-label="校园资源平台界面方案">
+  <style>
+    #campus-ui-plan {
+      --campus-page: light-dark(#f3f7fa, #172127);
+      --campus-panel: light-dark(#ffffff, #1e2c32);
+      --campus-text: light-dark(#172b3a, #e3edf1);
+      --campus-muted: light-dark(#536775, #a6bbc5);
+      --campus-line: light-dark(#dce5e9, #3a505c);
+      --campus-brand: light-dark(#166b76, #8ad3da);
+      --campus-on-brand: light-dark(#ffffff, #123139);
+      --campus-soft: light-dark(#e7f2f3, #28434b);
+      --campus-success: light-dark(#1b634d, #9dd9bf);
+      --campus-error: light-dark(#a43b35, #ffafa8);
+      --campus-radius: 10px;
+      --campus-row-space: 18px;
+      color: var(--campus-text); font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    }
+    #campus-ui-plan * { box-sizing: border-box; }
+    #campus-ui-plan [hidden] { display: none !important; }
+    #campus-ui-plan button, #campus-ui-plan input, #campus-ui-plan select { font: inherit; }
+    #campus-ui-plan button { color: inherit; }
+    #campus-ui-plan button:disabled { opacity: .58; cursor: not-allowed; }
+    #campus-ui-plan h2, #campus-ui-plan h3, #campus-ui-plan p { margin: 0; }
+    #campus-ui-plan h2 { font-size: 26px; font-weight: 500; line-height: 1.35; letter-spacing: -.5px; }
+    #campus-ui-plan h3 { font-size: 17px; font-weight: 500; }
+    #campus-ui-plan small { font-size: 12px; }
+    #campus-ui-plan .cp-preview { display: flex; gap: 12px; align-items: center; justify-content: space-between; color: var(--campus-muted); padding: 0 0 12px; flex-wrap: wrap; }
+    #campus-ui-plan .cp-preview span { font-size: 12px; }
+    #campus-ui-plan .cp-app { background: var(--campus-page); border: 1px solid var(--campus-line); border-radius: 12px; overflow: clip; }
+    #campus-ui-plan .cp-header { background: var(--campus-panel); border-bottom: 1px solid var(--campus-line); display: flex; align-items: center; gap: 28px; padding: 18px 24px; }
+    #campus-ui-plan .cp-logo { display: flex; align-items: center; gap: 9px; white-space: nowrap; font-size: 16px; font-weight: 500; }
+    #campus-ui-plan .cp-logo-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--campus-brand); color: var(--campus-on-brand); }
+    #campus-ui-plan .cp-topnav { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+    #campus-ui-plan .cp-topnav button { background: transparent; border: 0; padding: 7px 10px; border-radius: 6px; white-space: nowrap; }
+    #campus-ui-plan .cp-topnav button[aria-pressed="true"] { color: var(--campus-brand); background: var(--campus-soft); }
+    #campus-ui-plan .cp-profile { border: 0; background: transparent; display: flex; gap: 8px; align-items: center; white-space: nowrap; padding: 5px; }
+    #campus-ui-plan .cp-avatar { background: var(--campus-soft); color: var(--campus-brand); width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; }
+    #campus-ui-plan .cp-body { display: grid; grid-template-columns: 164px minmax(0,1fr); }
+    #campus-ui-plan .cp-body[data-no-sidebar="true"] { grid-template-columns: 1fr; }
+    #campus-ui-plan .cp-sidebar { padding: 26px 12px; background: var(--campus-panel); border-right: 1px solid var(--campus-line); }
+    #campus-ui-plan .cp-sidebar-title { color: var(--campus-muted); font-size: 12px; padding: 0 12px 12px; }
+    #campus-ui-plan .cp-sidebutton { display: flex; gap: 10px; align-items: center; width: 100%; border: 0; background: transparent; text-align: left; padding: 11px 12px; border-radius: 7px; margin-bottom: 5px; }
+    #campus-ui-plan .cp-sidebutton[aria-pressed="true"] { background: var(--campus-soft); color: var(--campus-brand); font-weight: 500; }
+    #campus-ui-plan .cp-sidehint { border-top: 1px solid var(--campus-line); margin: 25px 10px 0; padding-top: 16px; color: var(--campus-muted); font-size: 12px; }
+    #campus-ui-plan .cp-main { padding: 28px; min-width: 0; }
+    #campus-ui-plan .cp-crumb { color: var(--campus-muted); font-size: 12px; margin-bottom: 16px; }
+    #campus-ui-plan .cp-subtitle { margin-top: 8px; color: var(--campus-muted); }
+    #campus-ui-plan .cp-surface { background: var(--campus-panel); border: 1px solid var(--campus-line); border-radius: var(--campus-radius); }
+    #campus-ui-plan .cp-filter { margin: 24px 0 24px; padding: 18px; }
+    #campus-ui-plan .cp-filter-fields { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 14px; }
+    #campus-ui-plan label.cp-field { display: grid; gap: 7px; min-width: 0; }
+    #campus-ui-plan .cp-field input, #campus-ui-plan .cp-field select { min-width: 0; width: 100%; color: var(--campus-text); background: var(--campus-panel); border: 1px solid var(--campus-line); border-radius: 6px; padding: 9px 10px; height: 42px; }
+    #campus-ui-plan .cp-filter-bottom { display: flex; gap: 14px; justify-content: space-between; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+    #campus-ui-plan .cp-check { display: flex; align-items: center; gap: 7px; min-height: 36px; }
+    #campus-ui-plan .cp-check input { width: 16px; height: 16px; accent-color: var(--campus-brand); }
+    #campus-ui-plan .cp-button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; min-height: 40px; border: 1px solid var(--campus-line); padding: 8px 14px; border-radius: 7px; background: var(--campus-panel); }
+    #campus-ui-plan .cp-button-main { background: var(--campus-brand); color: var(--campus-on-brand); border-color: var(--campus-brand); }
+    #campus-ui-plan .cp-quiet { color: var(--campus-muted); }
+    #campus-ui-plan .cp-result-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; margin-bottom: 12px; }
+    #campus-ui-plan .cp-results { display: grid; gap: 12px; }
+    #campus-ui-plan .cp-room { padding: var(--campus-row-space); display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: center; }
+    #campus-ui-plan .cp-room-meta { display: flex; gap: 8px 16px; flex-wrap: wrap; margin: 7px 0 9px; color: var(--campus-muted); font-size: 13px; }
+    #campus-ui-plan .cp-availability { color: var(--campus-success); font-size: 13px; }
+    #campus-ui-plan .cp-tag { display: inline-block; background: var(--campus-soft); color: var(--campus-brand); border-radius: 4px; padding: 2px 7px; font-size: 12px; }
+    #campus-ui-plan .cp-room-action { display: grid; justify-items: end; gap: 10px; }
+    #campus-ui-plan .cp-detail { padding: 20px; margin-top: 16px; }
+    #campus-ui-plan .cp-detail-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+    #campus-ui-plan .cp-seats { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+    #campus-ui-plan .cp-seat { min-width: 72px; min-height: 44px; border: 1px solid var(--campus-line); border-radius: 6px; background: var(--campus-panel); padding: 8px; }
+    #campus-ui-plan .cp-seat[aria-pressed="true"] { border-color: var(--campus-brand); background: var(--campus-soft); color: var(--campus-brand); }
+    #campus-ui-plan .cp-selected { border-top: 1px solid var(--campus-line); padding-top: 12px; color: var(--campus-brand); }
+    #campus-ui-plan .cp-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--campus-line); margin: 24px 0 18px; }
+    #campus-ui-plan .cp-tab { padding: 8px 0 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; }
+    #campus-ui-plan .cp-tab[aria-pressed="true"] { border-color: var(--campus-brand); color: var(--campus-brand); }
+    #campus-ui-plan .cp-reservation { padding: 22px; }
+    #campus-ui-plan .cp-reservation-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    #campus-ui-plan .cp-reservation-date { font-size: 22px; font-weight: 500; margin-bottom: 9px; }
+    #campus-ui-plan .cp-reservation-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--campus-line); margin-top: 20px; padding-top: 16px; }
+    #campus-ui-plan .cp-empty { display: grid; justify-items: center; gap: 12px; text-align: center; padding: 40px 20px; }
+    #campus-ui-plan .cp-empty-icon { color: var(--campus-brand); margin-bottom: 4px; }
+    #campus-ui-plan .cp-alert { border-left: 3px solid var(--campus-error); color: var(--campus-error); padding: 10px 13px; margin-top: 14px; background: var(--campus-panel); }
+    #campus-ui-plan .cp-login { padding: 40px 24px; background: var(--campus-page); }
+    #campus-ui-plan .cp-login-panel { max-width: 440px; margin: 0 auto; padding: 30px; }
+    #campus-ui-plan .cp-login-panel h2 { margin-top: 20px; }
+    #campus-ui-plan .cp-login-panel .cp-button-main { width: 100%; margin: 26px 0 16px; }
+    #campus-ui-plan .cp-login-foot { margin-top: 24px; border-top: 1px solid var(--campus-line); padding-top: 16px; }
+    #campus-ui-plan .cp-mobile-menu { display: none; }
+    #campus-ui-plan .cp-summary { margin-top: 20px; border-top: 1px solid var(--campus-line); padding-top: 14px; color: var(--campus-muted); }
+    #campus-ui-plan .cp-summary dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; }
+    #campus-ui-plan .cp-summary dd { margin: 0; color: var(--campus-text); }
+    #campus-ui-plan .cp-profile-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 24px; border-bottom: 1px solid var(--campus-line); background: var(--campus-panel); }
+    #campus-ui-plan .cp-footer { margin-top: 24px; color: var(--campus-muted); font-size: 12px; }
+    #campus-ui-plan .cp-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    @media (max-width: 760px) {
+      #campus-ui-plan .cp-header { padding: 14px 16px; flex-wrap: wrap; gap: 12px; }
+      #campus-ui-plan .cp-topnav { order: 3; flex-basis: 100%; }
+      #campus-ui-plan .cp-profile { margin-left: auto; }
+      #campus-ui-plan .cp-body { grid-template-columns: 1fr; }
+      #campus-ui-plan .cp-main { padding: 22px 18px; }
+      #campus-ui-plan .cp-mobile-menu { display: flex; border: 0; background: var(--campus-panel); padding: 12px 16px; gap: 8px; align-items: center; border-bottom: 1px solid var(--campus-line); width: 100%; }
+      #campus-ui-plan .cp-sidebar { display: none; border-right: 0; padding: 12px 16px; border-bottom: 1px solid var(--campus-line); }
+      #campus-ui-plan .cp-sidebar.cp-open { display: block; }
+      #campus-ui-plan .cp-sidehint { display: none; }
+      #campus-ui-plan .cp-filter-fields { grid-template-columns: 1fr 1fr; }
+      #campus-ui-plan .cp-filter-fields .cp-date { grid-column: 1/-1; }
+    }
+    @media (max-width: 420px) {
+      #campus-ui-plan h2 { font-size: 23px; }
+      #campus-ui-plan .cp-room { grid-template-columns: 1fr; }
+      #campus-ui-plan .cp-room-action { justify-items: start; }
+      #campus-ui-plan .cp-profile-label { display: none; }
+      #campus-ui-plan .cp-filter { padding: 14px; }
+      #campus-ui-plan .cp-filter-bottom .cp-button { width: 100%; }
+      #campus-ui-plan .cp-field input, #campus-ui-plan .cp-field select { font-size: 16px; }
+      #campus-ui-plan .cp-login { padding: 22px 14px; }
+      #campus-ui-plan .cp-login-panel { padding: 22px; }
+      #campus-ui-plan .cp-topnav { gap: 0; justify-content: space-between; }
+      #campus-ui-plan .cp-topnav button { padding: 7px 6px; }
+      #campus-ui-plan .cp-summary dl { grid-template-columns: 1fr; gap: 4px; }
+    }
+    @media (pointer: coarse) { #campus-ui-plan button { min-height: 44px; } }
+  </style>
+  <div class="cp-preview"><span>交互方案 · 所有数据均为演示</span><button type="button" class="cp-button cursor-interaction" data-action="show-login">预览登录入口</button></div>
+  <div class="cp-app">
+    <header class="cp-header">
+      <div class="cp-logo"><span class="cp-logo-mark"><i data-lucide="book-open" class="cp-icon" aria-hidden="true"></i></span>校园资源</div>
+      <nav class="cp-topnav" aria-label="业务模块">
+        <button type="button" class="cursor-interaction" data-module="m1" aria-pressed="true">座位预约</button>
+        <button type="button" class="cursor-interaction" data-module="m2" aria-pressed="false">整室申请</button>
+        <button type="button" class="cursor-interaction" data-module="m3" aria-pressed="false">报修服务</button>
+      </nav>
+      <button type="button" class="cp-profile cursor-interaction" data-action="profile" aria-expanded="false" aria-label="打开示例学生账户菜单"><span class="cp-avatar">学</span><span class="cp-profile-label">示例学生</span><i data-lucide="chevron-down" class="cp-icon" aria-hidden="true"></i></button>
+    </header>
+    <div class="cp-profile-actions" hidden><button type="button" class="cp-button cursor-interaction" data-action="show-login">退出到登录页</button></div>
+    <section class="cp-login" hidden aria-label="统一登录入口">
+      <div class="cp-login-panel cp-surface">
+        <span class="cp-tag">统一身份入口</span>
+        <h2>登录校园资源平台</h2>
+        <p class="cp-subtitle">登录后查看对你开放的自习室，并管理个人预约。</p>
+        <button type="button" class="cp-button cp-button-main cursor-interaction" data-action="demo-login">进入登录后预览<i data-lucide="arrow-right" class="cp-icon" aria-hidden="true"></i></button>
+        <p class="cp-quiet"><small>当前仅演示登录前后的页面，无需输入账号或密码。</small></p>
+        <div class="cp-login-foot cp-quiet"><small>身份验证方式待团队确认；此入口可接入账号登录或学校统一认证。</small></div>
+      </div>
+    </section>
+    <div class="cp-workspace">
+      <button type="button" class="cp-mobile-menu cursor-interaction" data-action="menu" aria-expanded="false"><i data-lucide="menu" class="cp-icon" aria-hidden="true"></i>模块菜单</button>
+      <div class="cp-body">
+        <aside class="cp-sidebar">
+          <p class="cp-sidebar-title">座位预约</p>
+          <nav aria-label="座位预约菜单">
+            <button type="button" class="cp-sidebutton cursor-interaction" data-page="search" aria-pressed="true"><i data-lucide="search" class="cp-icon" aria-hidden="true"></i>座位搜索</button>
+            <button type="button" class="cp-sidebutton cursor-interaction" data-page="reservations" aria-pressed="false"><i data-lucide="calendar-days" class="cp-icon" aria-hidden="true"></i>我的预约</button>
+          </nav>
+          <div class="cp-sidehint">当前身份<br><span class="cp-quiet">学生 · 示例院系</span></div>
+        </aside>
+        <main class="cp-main">
+          <div class="cp-crumb">校园资源 / <span data-crumb>座位预约</span></div>
+          <section data-view="search">
+            <h2>给专注留一个位置</h2>
+            <p class="cp-subtitle">选择自习时段，查找对你开放的房间与座位。</p>
+            <form class="cp-filter cp-surface">
+              <div class="cp-filter-fields">
+                <label class="cp-field cp-date">预约日期<input type="date" name="date" value="2026-10-23" required></label>
+                <label class="cp-field">开始时间<select name="start"><option value="16">16:00</option><option value="17">17:00</option><option value="18" selected>18:00</option><option value="19">19:00</option><option value="20">20:00</option></select></label>
+                <label class="cp-field">结束时间<select name="end"><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20" selected>20:00</option><option value="21">21:00</option><option value="22">22:00</option></select></label>
+              </div>
+              <div class="cp-filter-bottom">
+                <label class="cp-check"><input type="checkbox" name="socket">仅看带插座的座位</label>
+                <button type="button" class="cp-button cp-button-main cursor-interaction" data-action="search-seats"><i data-lucide="search" class="cp-icon" aria-hidden="true"></i>查询座位</button>
+              </div>
+              <div class="cp-alert" role="alert" data-filter-error hidden></div>
+            </form>
+            <div class="cp-result-head"><h3 data-result-count>可预约房间 · 3</h3><small class="cp-quiet" data-result-period>10月23日 · 18:00–20:00</small></div>
+            <div class="cp-results" aria-live="polite">
+              <article class="cp-room cp-surface" data-room="a">
+                <div><h3>教学楼 A201</h3><div class="cp-room-meta"><span>开放 08:00–22:00</span><span>全校开放</span></div><span class="cp-availability">12 个座位可约</span></div>
+                <div class="cp-room-action"><span class="cp-tag">含插座座位</span><button type="button" class="cp-button cursor-interaction" data-open-room="a">查看座位<i data-lucide="arrow-right" class="cp-icon" aria-hidden="true"></i></button></div>
+              </article>
+              <article class="cp-room cp-surface" data-room="b">
+                <div><h3>院系自习室 B302</h3><div class="cp-room-meta"><span>开放 08:00–22:00</span><span>本院系开放</span></div><span class="cp-availability">4 个座位可约</span></div>
+                <div class="cp-room-action"><span class="cp-tag">含插座座位</span><button type="button" class="cp-button cursor-interaction" data-open-room="b">查看座位<i data-lucide="arrow-right" class="cp-icon" aria-hidden="true"></i></button></div>
+              </article>
+              <article class="cp-room cp-surface" data-room="c">
+                <div><h3>阅览室 C101</h3><div class="cp-room-meta"><span>开放 09:00–22:00</span><span>全校开放</span></div><span class="cp-availability">6 个座位可约</span></div>
+                <div class="cp-room-action"><small class="cp-quiet">无插座座位</small><button type="button" class="cp-button cursor-interaction" data-open-room="c">查看座位<i data-lucide="arrow-right" class="cp-icon" aria-hidden="true"></i></button></div>
+              </article>
+            </div>
+            <section class="cp-detail cp-surface" data-seat-detail hidden aria-label="房间座位">
+              <div class="cp-detail-top"><h3 data-room-name>教学楼 A201</h3><button type="button" class="cp-button cursor-interaction" data-action="close-detail">收起</button></div>
+              <p class="cp-quiet"><small>可预约座位按编号排列</small></p>
+              <div class="cp-seats"></div>
+              <p class="cp-selected" aria-live="polite" data-seat-selection>选择座位查看属性</p>
+            </section>
+            <p class="cp-footer">以整点小时预约 · 当前上限 4 小时 · 时间显示为北京时间</p>
+          </section>
+          <section data-view="reservations" hidden>
+            <h2>我的预约</h2><p class="cp-subtitle">查看自习安排与历史记录。</p>
+            <div class="cp-tabs" role="group" aria-label="预约范围"><button type="button" class="cp-tab cursor-interaction" data-reservation-tab="current" aria-pressed="true">当前预约</button><button type="button" class="cp-tab cursor-interaction" data-reservation-tab="history" aria-pressed="false">历史预约</button></div>
+            <article class="cp-reservation cp-surface" data-reservation-current>
+              <div class="cp-reservation-head"><h3>教学楼 A201 · A-08</h3><span class="cp-tag">待开始</span></div>
+              <div class="cp-reservation-date">18:00–20:00</div><p class="cp-quiet">2026年10月23日 · 2 小时</p>
+              <div class="cp-reservation-footer"><span class="cp-quiet">座位配有插座</span><button type="button" class="cp-button cursor-interaction" data-action="reservation-detail" aria-expanded="false">查看详情</button></div>
+              <div class="cp-summary" data-reservation-detail hidden><dl><dt>房间</dt><dd>教学楼 A201</dd><dt>预约座位</dt><dd>A-08 · 有插座</dd><dt>当前状态</dt><dd>待开始</dd></dl></div>
+            </article>
+            <div class="cp-empty cp-surface" data-reservation-history hidden><i data-lucide="calendar" class="cp-empty-icon" aria-hidden="true"></i><h3>还没有历史预约</h3><p class="cp-quiet">结束后的预约会保留在这里。</p><button type="button" class="cp-button cursor-interaction" data-page="search">查找座位</button></div>
+            <p class="cp-footer">此处仅展示当前用户的预约。</p>
+          </section>
+          <section data-view="module" hidden>
+            <h2 data-module-title>整室申请</h2>
+            <p class="cp-subtitle" data-module-subtitle>模块入口预留</p>
+            <div class="cp-empty cp-surface" style="margin-top:24px"><i data-lucide="layout-panel-left" class="cp-empty-icon" aria-hidden="true"></i><h3>沿用统一页面框架</h3><p class="cp-quiet">此处展示跨模块导航；具体业务界面由对应模块组设计。</p><button type="button" class="cp-button cursor-interaction" data-page="search">返回座位搜索</button></div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('campus-ui-plan');
+      const query = selector => root.querySelector(selector);
+      const all = selector => Array.from(root.querySelectorAll(selector));
+      const form = query('form');
+      const state = { page: 'search', history: false, socket: false, room: '', seat: '', date: '2026-10-23', start: '18', end: '20' };
+      let lastSavedSnapshot = '';
+      const rooms = {
+        a: { name: '教学楼 A201', prefix: 'A', seats: 12, sockets: 8 },
+        b: { name: '院系自习室 B302', prefix: 'B', seats: 4, sockets: 2 },
+        c: { name: '阅览室 C101', prefix: 'C', seats: 6, sockets: 0 }
+      };
+      const design = { compact: false, radius: 10 };
+      function persist() {
+        if (window.openai && window.openai.setWidgetState) {
+          lastSavedSnapshot = JSON.stringify(state);
+          window.openai.setWidgetState({ modelContent: { page: state.page, onlySocket: state.socket }, privateContent: { ...state } }).catch(() => {});
+        }
+      }
+      function clearSeat() {
+        state.room = ''; state.seat = '';
+        query('[data-seat-detail]').hidden = true;
+      }
+      function showPage(page) {
+        state.page = page;
+        query('.cp-login').hidden = page !== 'login';
+        query('.cp-workspace').hidden = page === 'login';
+        query('.cp-topnav').hidden = page === 'login';
+        query('.cp-profile').hidden = page === 'login';
+        query('.cp-body').dataset.noSidebar = String(page === 'module');
+        query('.cp-profile-actions').hidden = true;
+        query('[data-action="profile"]').setAttribute('aria-expanded', 'false');
+        all('[data-view]').forEach(el => el.hidden = el.dataset.view !== page);
+        all('.cp-sidebutton').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.page === page)));
+        all('[data-module]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.module === 'm1' && page !== 'module')));
+        query('[data-crumb]').textContent = page === 'reservations' ? '我的预约' : '座位预约';
+        query('.cp-sidebar').classList.remove('cp-open');
+        query('[data-action="menu"]').setAttribute('aria-expanded', 'false');
+        if (page !== 'module') query('.cp-sidebar').hidden = false;
+      }
+      function showResults() {
+        all('[data-open-room]').forEach(button => button.disabled = false);
+        const filtered = Object.entries(rooms).filter(([, room]) => !state.socket || room.sockets > 0);
+        all('[data-room]').forEach(el => {
+          const room = rooms[el.dataset.room];
+          el.hidden = state.socket && room.sockets === 0;
+          el.querySelector('.cp-availability').textContent = (state.socket ? room.sockets : room.seats) + ' 个座位可约';
+        });
+        query('[data-result-count]').textContent = '可预约房间 · ' + filtered.length;
+        const parts = state.date.split('-');
+        query('[data-result-period]').textContent = Number(parts[1]) + '月' + Number(parts[2]) + '日 · ' + state.start + ':00–' + state.end + ':00';
+      }
+      function openRoom(key) {
+        const room = rooms[key];
+        state.room = key; state.seat = '';
+        query('[data-seat-detail]').hidden = false;
+        query('[data-room-name]').textContent = room.name;
+        query('.cp-seats').replaceChildren();
+        const count = state.socket ? room.sockets : room.seats;
+        for (let index = 1; index <= count; index++) {
+          const seat = room.prefix + '-' + String(index).padStart(2, '0');
+          const button = document.createElement('button');
+          button.type = 'button'; button.className = 'cp-seat cursor-interaction';
+          button.dataset.seat = seat; button.dataset.socket = String(index <= room.sockets);
+          button.textContent = seat;
+          button.setAttribute('aria-pressed', 'false');
+          button.setAttribute('aria-label', seat + (index <= room.sockets ? '，有插座' : '，无插座'));
+          query('.cp-seats').append(button);
+        }
+        query('[data-seat-selection]').textContent = '选择座位查看属性';
+      }
+      function reservationTab(history) {
+        state.history = history;
+        query('[data-reservation-current]').hidden = history;
+        query('[data-reservation-history]').hidden = !history;
+        all('[data-reservation-tab]').forEach(el => el.setAttribute('aria-pressed', String((el.dataset.reservationTab === 'history') === history)));
+      }
+      function searchSeats() {
+        const values = new FormData(form);
+        const duration = Number(values.get('end')) - Number(values.get('start'));
+        const error = query('[data-filter-error]');
+        if (duration <= 0 || duration > 4 || !values.get('date')) {
+          error.textContent = duration <= 0 ? '结束时间需晚于开始时间。' : duration > 4 ? '单次预约不能超过 4 小时。' : '请选择预约日期。';
+          error.hidden = false; return;
+        }
+        error.hidden = true;
+        state.date = String(values.get('date')); state.start = String(values.get('start')); state.end = String(values.get('end')); state.socket = values.has('socket');
+        clearSeat(); showResults(); persist();
+      }
+      form.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); searchSeats(); }
+      });
+      form.addEventListener('change', () => {
+        clearSeat();
+        all('[data-open-room]').forEach(button => button.disabled = true);
+        query('[data-result-period]').textContent = '筛选已修改，请重新查询';
+      });
+      root.addEventListener('click', event => {
+        const button = event.target.closest('button');
+        if (!button || !root.contains(button)) return;
+        if (button.dataset.page) showPage(button.dataset.page);
+        if (button.dataset.openRoom) openRoom(button.dataset.openRoom);
+        if (button.dataset.module) {
+          if (button.dataset.module === 'm1') showPage('search');
+          else {
+            showPage('module'); query('.cp-sidebar').hidden = true;
+            query('[data-module-title]').textContent = button.dataset.module === 'm2' ? '整室申请' : '报修服务';
+            query('[data-module-subtitle]').textContent = button.dataset.module === 'm2' ? '申请整间教室并跟踪审批进度。' : '报告故障并跟踪维修进展。';
+            query('[data-crumb]').textContent = query('[data-module-title]').textContent;
+            all('[data-module]').forEach(el => el.setAttribute('aria-pressed', String(el === button)));
+          }
+        }
+        if (button.dataset.reservationTab) reservationTab(button.dataset.reservationTab === 'history');
+        if (button.dataset.seat) {
+          state.seat = button.dataset.seat;
+          all('[data-seat]').forEach(el => el.setAttribute('aria-pressed', String(el === button)));
+          query('[data-seat-selection]').textContent = '已选 ' + state.seat + ' · ' + (button.dataset.socket === 'true' ? '有插座' : '无插座') + ' · ' + state.start + ':00–' + state.end + ':00';
+        }
+        switch (button.dataset.action) {
+          case 'search-seats': searchSeats(); break;
+          case 'show-login': showPage('login'); clearSeat(); break;
+          case 'demo-login': showPage('search'); break;
+          case 'close-detail': clearSeat(); break;
+          case 'menu': {
+            const expanded = query('.cp-sidebar').classList.toggle('cp-open');
+            button.setAttribute('aria-expanded', String(expanded)); break;
+          }
+          case 'profile': {
+            const panel = query('.cp-profile-actions'); panel.hidden = !panel.hidden;
+            button.setAttribute('aria-expanded', String(!panel.hidden)); break;
+          }
+          case 'reservation-detail': {
+            const panel = query('[data-reservation-detail]'); panel.hidden = !panel.hidden;
+            button.setAttribute('aria-expanded', String(!panel.hidden)); break;
+          }
+        }
+        persist();
+      });
+      function applySaved(snapshot) {
+        const saved = snapshot && snapshot.privateContent;
+        if (!saved) return;
+        const savedSignature = JSON.stringify(saved);
+        if (savedSignature === lastSavedSnapshot) return;
+        lastSavedSnapshot = savedSignature;
+        if (['search', 'reservations', 'login'].includes(saved.page)) showPage(saved.page);
+        state.socket = saved.socket === true;
+        query('[name="socket"]').checked = state.socket;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(saved.date || '')) state.date = saved.date;
+        if (['16','17','18','19','20'].includes(saved.start)) state.start = saved.start;
+        if (['17','18','19','20','21','22'].includes(saved.end)) state.end = saved.end;
+        query('[name="date"]').value = state.date; query('[name="start"]').value = state.start; query('[name="end"]').value = state.end;
+        reservationTab(saved.history === true); showResults();
+      }
+      showResults(); applySaved(window.openai && window.openai.widgetState);
+      window.addEventListener('openai:set_globals', event => applySaved(event.detail && event.detail.globals && event.detail.globals.widgetState));
+      if (globalThis.Tweak) {
+        const tweaks = new Tweak({ container: root, onChange: () => {
+          root.style.setProperty('--campus-radius', design.radius + 'px');
+          root.style.setProperty('--campus-row-space', design.compact ? '12px' : '18px');
+        }});
+        tweaks.addToggle(design, 'compact', { label: '紧凑列表' });
+        tweaks.addSlider(design, 'radius', { label: '面板圆角', min: 6, max: 14, step: 2, unit: 'px' });
+      }
+    })();
+  </script>
+</div>
