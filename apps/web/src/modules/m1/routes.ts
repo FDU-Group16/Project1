@@ -1,12 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 export const m1Routes: RouteRecordRaw[] = [
+  { path: '/m1/settings', component: () => import('./pages/SettingsPage.vue'), meta: { title: '预约设置', section: 'm1', requiresAuth: true, permission: 'room:manage' } },
   {
     path: '/m1',
     name: 'm1-home',
-    component: () => import('./pages/ModuleHome.vue'),
-    props: { preview: false },
-    meta: { title: '座位搜索', section: 'm1' },
+    component: () => import('./pages/SeatSearchPage.vue'),
+    meta: { title: '座位搜索', section: 'm1', requiresAuth: true },
   },
   {
     path: '/m1/preview',
@@ -19,8 +19,7 @@ export const m1Routes: RouteRecordRaw[] = [
     path: '/m1/reservations',
     name: 'm1-reservations',
     component: () => import('./pages/ReservationsPage.vue'),
-    props: { preview: false },
-    meta: { title: '我的预约', section: 'm1' },
+    meta: { title: '我的预约', section: 'm1', requiresAuth: true },
   },
   {
     path: '/m1/preview/reservations',
@@ -33,8 +32,7 @@ export const m1Routes: RouteRecordRaw[] = [
     path: '/m1/reservations/:id',
     name: 'm1-reservation-detail',
     component: () => import('./pages/ReservationDetailPage.vue'),
-    props: { preview: false },
-    meta: { title: '预约详情', section: 'm1' },
+    meta: { title: '预约详情', section: 'm1', requiresAuth: true },
   },
   {
     path: '/m1/preview/reservations/:id',

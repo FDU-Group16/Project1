@@ -33,7 +33,7 @@ export function filtersToQuery(filters: SearchFilters) {
   return { date: filters.date, start: filters.start, end: filters.end, socket: filters.socket ? '1' : '0' };
 }
 
-export function validateFilters(filters: SearchFilters): { date?: string; time?: string } {
+export function validateFilters(filters: SearchFilters, maxHours = 4): { date?: string; time?: string } {
   const errors: { date?: string; time?: string } = {};
   const validDate = /^\d{4}-\d{2}-\d{2}$/.test(filters.date)
     && !Number.isNaN(Date.parse(`${filters.date}T00:00:00+08:00`))
@@ -45,8 +45,13 @@ export function validateFilters(filters: SearchFilters): { date?: string; time?:
     errors.time = '请选择列表中的整点时间。';
   } else if (Number(filters.end) <= Number(filters.start)) {
     errors.time = '结束时间需要晚于开始时间。';
-  } else if (Number(filters.end) - Number(filters.start) > 4) {
-    errors.time = '单次时段最多 4 小时，请缩短时段。';
+  } else if (Number(filters.end) - Number(filters.start) > maxHours) {
+    errors.time = `单次时段最多 ${maxHours} 小时，请缩短时段。`;
   }
   return errors;
+}
+
+export function filterInterval(filters: SearchFilters) {
+  const midnight = Date.parse(`${filters.date}T00:00:00+08:00`);
+  return { startsAt: new Date(midnight + Number(filters.start) * 3_600_000).toISOString(), endsAt: new Date(midnight + Number(filters.end) * 3_600_000).toISOString() };
 }
