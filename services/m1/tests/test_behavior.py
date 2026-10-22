@@ -10,7 +10,7 @@ import os
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from services.m1 import core,dependencies
+from services.m1 import core,dependencies,checkin
 from services.m1.main import app
 from services.platform import Problem,utc_text
 
@@ -122,9 +122,44 @@ class M1Behavior(unittest.TestCase):
         self.assertEqual(self.book(key='other-seat',user=winner,seat='s2').status_code,409)
 
 
+    def test_m104_owner_room_day_and_time_window(self):
+        reservation=self.book().json()
+        path='/api/v1/reservations/'+reservation['id']+'/check-in'
+        code=checkin.daily_code('public',BASE)
+        self.assertEqual(self.client.post(path,json={'code':code},headers=self.headers()).status_code,409)
+        self.clock=BASE+timedelta(hours=2)
+        self.assertEqual(self.client.post(path,json={'code':code},headers=self.headers('dev-student-ee')).status_code,404)
+        for wrong in ['错误编码',checkin.daily_code('cs',self.clock),checkin.daily_code('public',self.clock-timedelta(days=1))]:
+            self.assertEqual(self.client.post(path,json={'code':wrong},headers=self.headers()).status_code,422)
+        response=self.client.post(path,json={'code':code},headers=self.headers())
+        self.assertEqual(response.json()['status'],'CHECKED_IN')
+        self.assertEqual(self.client.post(path,json={'code':code},headers=self.headers()).status_code,200)
+        self.clock+=timedelta(minutes=15)
+        self.assertEqual(self.client.post(path,json={'code':code},headers=self.headers()).status_code,409)
+
+
+    def test_m104_deadline_rechecked_after_lock_wait(self):
+        reservation=self.book().json()
+        self.clock=BASE+timedelta(hours=2,minutes=14,seconds=59)
+        original_lock=core.lock
+        def delayed_lock(conn,*keys):
+            original_lock(conn,*keys)
+            self.clock+=timedelta(seconds=2)
+        with patch.object(core,'lock',delayed_lock):
+            result=self.client.post('/api/v1/reservations/'+reservation['id']+'/check-in',json={'code':checkin.daily_code('public',self.clock)},headers=self.headers())
+        self.assertEqual(result.status_code,409)
+
+
     def test_m102_user_overlap_hides_unbookable_seats(self):
         self.book()
         self.assertEqual(self.search().json()['items'],[])
+
+
+    def test_m104_code_permission_and_missing_secret(self):
+        self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers()).status_code,403)
+        self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,200)
+        with patch.dict(os.environ,{'M1_CHECKIN_SECRET':''}):
+            self.assertEqual(self.client.get('/api/v1/rooms/public/check-in-code',headers=self.headers('dev-room-admin')).status_code,503)
 
 
     def test_real_identity_fails_closed_and_validates_shape(self):
