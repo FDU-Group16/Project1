@@ -8,10 +8,11 @@
 
 | 能力 | 实现情况 | 验证情况 |
 | --- | --- | --- |
-| [App.vue](src/App.vue) / [main.ts](src/main.ts) | 组合公共导航、布局与 Vue Router | 类型、构建及本机浏览器检查通过 |
-| [router/index.ts](src/router/index.ts) | 首页 `/`、汇总三个模块路由；未知路径回首页 | 首页、模块切换、直达、刷新及前进后退已检查 |
-| [AppLayout.vue](src/shared/layouts/AppLayout.vue) | 接收 `navigation: { label: string; to: string }[]`，默认插槽承载页面；提供主导航与跳过导航链接 | 320px 窄屏和键盘跳过导航已检查 |
-| [ModuleIntro.vue](src/shared/components/ModuleIntro.vue) | 接收 `title`、`description` 字符串及默认插槽；仅展示内容 | 首页和三个静态模块页已使用并检查 |
+| [App.vue](src/App.vue) / [main.ts](src/main.ts) | 组合公共导航、上下文侧栏与 Vue Router，M1 示例入口明确区分 | 本轮验证见下方实施记录 |
+| [router/index.ts](src/router/index.ts) | 首页 `/`、汇总三个模块路由，新增 `/login`、`/403` 和未匹配页面；维护标题、滚动与导航焦点 | 本轮验证见下方实施记录 |
+| [AppLayout.vue](src/shared/layouts/AppLayout.vue) | 参数化顶部导航/侧栏、手机菜单、登录入口、跳过导航及默认插槽；公共层不导入业务内部 | 本轮验证见下方实施记录 |
+| [HomePage.vue](src/shared/pages/HomePage.vue)、[LoginPage.vue](src/shared/pages/LoginPage.vue) | 平台首页与统一身份接入入口；登录服务未接入，不收集密码或创建身份 | 实际身份与权限未验证 |
+| [AppIcon.vue](src/shared/components/AppIcon.vue)、[ModuleIntro.vue](src/shared/components/ModuleIntro.vue)、[style.css](src/style.css) | 本地图标、模块说明、主题变量与 ui-* 控件样式；兼容 M2/M3 原有静态说明 | 不增加依赖或外部展示脚本 |
 | [shared/api](src/shared/api/README.md) | 仅有职责说明 | 无 HTTP 请求实现，不可视为已完成接口接入 |
 | [shared/auth](src/shared/auth/README.md) | 仅有职责说明 | 无登录、令牌或权限实现 |
 
@@ -19,6 +20,7 @@ Vue Router 已锁定为 `4.6.4`；没有状态管理或 UI 组件库。公共组
 
 ## 验证与发布证据
 
+- 2026-10-22 本批 Vue 界面的根检查及最终生产构建通过；开发服务和生产预览均通过 7 组真实浏览器验收，包含全部入口、筛选/详情/安全返回、键盘和 320–1440px 响应式，无 JavaScript 错误。命令、范围与实际发布证据见 [实施记录](docs/vue-interface-implementation.md)。真实身份和业务接口未接入，不能据此声明业务已验收。
 - 根目录 `bash scripts/check.sh` 通过，覆盖契约基础检查、后端健康检查、Vue 类型检查和生产构建。
 - 浏览器检查与本次目录重构范围见 [前端骨架任务](docs/frontend-scaffold.md)。该记录包含现有 Vite 依赖告警，升级待单独处理。
 - 上述页面与浏览器证据属于本机工作区；远端工程部署证据见下项，不表示业务页面或接口已经验收。人工评审与生产发布尚未登记，未创建 PR 或发布 tag。
@@ -28,11 +30,13 @@ Vue Router 已锁定为 `4.6.4`；没有状态管理或 UI 组件库。公共组
 
 - 身份、主数据和业务接口依赖相应 [后端模块记录](../../docs/module-status.md)与 [契约](../../contracts/README.md)；当前后端仅有健康端点。
 - 登录、公共 HTTP 配置和代理接入须以相应任务和已评审契约实施。
-- 已整理 [通用前端设计](docs/common-frontend-design.md) 与 [独立交互原型](docs/prototypes/common-frontend.html)，覆盖公共外壳、视觉规范、登录状态与 M1 示例页面。关联 D-01、E-01、E-07、E-09；当前仅为提案/原型，未替换 Vue 外壳，未新增业务路由、接口、契约或迁移。真实身份与接口联调尚未验证，维护与评审人员仍需在实施任务中确认。
+- [通用前端设计](docs/common-frontend-design.md) 和 [独立交互原型](docs/prototypes/common-frontend.html) 已用于本轮 Vue 界面实现，见 [实施任务](docs/vue-interface-implementation.md)。关联 D-01 的入口及 E-01、E-07、E-09；实际身份、业务接口联调尚未完成，无契约或迁移变更。M2/M3 保持原有模块入口，模块私有代码不在本次范围。
 - 各模块页面状态与业务接入分别记录在 [M1](src/modules/m1/STATUS.md)、[M2](src/modules/m2/STATUS.md)、[M3](src/modules/m3/STATUS.md)，公共维护者不代替模块组认定业务完成。
 - 当前测试环境的 GHCR 网络、包读写与部署任务只读令牌已由首次运行验证，API/Web 持久缓存已成功导出；更换环境仍须核验 GHCR/blob HTTPS 访问及包授权。使用自动 `GITHUB_TOKEN`，无需新增 Registry Secret。下一步通过后续文档推送验证重复运行的缓存和镜像复用；不得提前将结果视为通过。共享维护者和 M1/M2/M3/D/Web 各组的具体评审人员尚未登记。
 
 ## 最近交接
+
+- 2026-10-22：按用户明确授权将原型落地为公共 Vue 界面和 M1 页面，计划同步 m1/develop 并核验测试站点。范围、同步 SHA、共享集成责任、页面验收与发布证据见 [实施记录](docs/vue-interface-implementation.md)。本批实现/验证/部署进度在该记录中分别更新，不代表 D 身份或 M1 后端已完成。
 
 - 2026-10-22：按用户要求保存公共界面方案、M1 页面方案及独立原型，纳入与 D 分工和协作规则一起提交至 m1、develop 的批次。范围、同步证据、原型验证及后续验收见 [设计记录](docs/common-frontend-design.md)。本次 `bash scripts/check.sh` 通过契约检查、四服务健康检查、Vue 类型检查及构建；文档链接检查与 `git diff --check` 通过；对仓库内导出 HTML 的浏览器交互、320/375/768/1024px 布局和明暗主题检查通过，无 JavaScript 错误。证据对应基线 `38ab097` 加本批文件，提交记录以 Git 历史为准；远端流水线结果另行核验。应用业务实现及发布验收范围未改变，设计提交不代表受影响模块已批准。
 - 2026-10-22：按用户授权推送镜像复用实现到 `develop`，首次 GHCR 发布、服务器拉取与健康激活成功；保留 develop 门禁、环境锁、提交 SHA 追溯和旧版别名回退兼容。完整运行记录与剩余验证范围见 [镜像复用任务](../../docs/tasks/2026-10-22-image-reuse.md)。
