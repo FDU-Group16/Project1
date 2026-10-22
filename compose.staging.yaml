@@ -68,7 +68,7 @@ services:
     image: campus-resource-web:${DEPLOY_SHA:?Set DEPLOY_SHA to the release commit}
     restart: unless-stopped
     ports:
-      - "${STAGING_WEB_BIND_ADDRESS:-127.0.0.1}:8080:80"
+      - "${STAGING_WEB_BIND_ADDRESS:-127.0.0.1}:${STAGING_WEB_PORT:-8080}:80"
 
 volumes:
   postgres-data:
