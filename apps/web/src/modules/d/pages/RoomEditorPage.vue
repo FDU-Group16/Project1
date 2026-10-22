@@ -1,0 +1,27 @@
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { dApi, weekdays, type Room } from '../api';
+import { errorMessage } from '../../../shared/api/client';
+import RequestState from '../../../shared/components/RequestState.vue';
+import SeatManager from '../components/SeatManager.vue';
+const route = useRoute(); const router = useRouter(); const room = ref<Room | null>(null);
+const existing = computed(() => typeof route.params.roomId === 'string');
+const form = reactive({ name: '', departmentId: '', openHour: 8, closeHour: 22, weekdays: [0, 1, 2, 3, 4, 5, 6], active: true });
+const loading = ref(false); const saving = ref(false); const error = ref(''); const saveError = ref(''); const message = ref(''); const confirmRetire = ref(false);
+function populate(value: Room) { room.value = value; Object.assign(form, { ...value, departmentId: value.departmentId ?? '', weekdays: [...value.weekdays] }); }
+async function load() { if (!existing.value) return; loading.value = true; error.value = ''; try { populate(await dApi.room(String(route.params.roomId))); } catch (cause) { error.value = errorMessage(cause); } finally { loading.value = false; } }
+onMounted(load);
+async function save() {
+  if (saving.value) return; saveError.value = ''; message.value = '';
+  if (!form.weekdays.length || form.closeHour <= form.openHour) { saveError.value = '至少选择一个开放日，且结束小时必须晚于开始小时。'; return; }
+  saving.value = true;
+  const payload = { name: form.name.trim(), departmentId: form.departmentId.trim() || null, openHour: form.openHour, closeHour: form.closeHour, weekdays: [...form.weekdays].sort(), active: form.active };
+  try { if (room.value) { populate(await dApi.updateRoom(room.value.id, payload)); message.value = '房间信息已保存。'; } else { const result = await dApi.createRoom(payload); await router.replace(`/d/rooms/${result.id}`); } }
+  catch (cause) { saveError.value = `${errorMessage(cause)}${!room.value ? ' 如果创建结果不确定，请返回房间列表核对后再重试。' : ''}`; }
+  finally { saving.value = false; }
+}
+async function retire() { if (!room.value || saving.value) return; saving.value = true; saveError.value = ''; try { populate(await dApi.retireRoom(room.value.id)); confirmRetire.value = false; message.value = '房间及座位已注销，历史引用保留。'; } catch (cause) { saveError.value = errorMessage(cause); } finally { saving.value = false; } }
+</script>
+<template><div><RouterLink to="/d/rooms" class="ui-link back">← 返回房间目录</RouterLink><header class="feature-header"><p class="ui-eyebrow">SPACE DETAILS</p><h1>{{ existing ? room?.name || '房间详情' : '登记新房间' }}</h1><p>{{ existing ? '维护基础信息与座位目录。' : '登记基础信息后，可以添加座位。' }}</p></header><RequestState :loading="loading" :error="error" @retry="load" /><template v-if="!loading && !error"><form class="feature-panel ui-panel" @submit.prevent="save"><p v-if="room" class="feature-note stable-id">稳定 ID：{{ room.id }} · {{ room.retired ? '已注销，不可修改' : room.active ? '已启用' : '已停用' }}</p><fieldset :disabled="saving || room?.retired"><div class="feature-grid"><label class="feature-field">房间名称<input v-model="form.name" required maxlength="120" /></label><label class="feature-field">院系 ID（留空表示公共）<input v-model="form.departmentId" maxlength="80" placeholder="例如 cs" /></label><label class="feature-field">开放开始小时<input v-model.number="form.openHour" type="number" min="0" max="23" step="1" required /></label><label class="feature-field">开放结束小时<input v-model.number="form.closeHour" type="number" min="1" max="24" step="1" required /></label></div><p class="feature-note">按北京时间解释。结束小时 24 表示次日零点；不跨午夜。</p><fieldset class="weekdays"><legend>开放日</legend><label v-for="(day, index) in weekdays" :key="index" class="feature-check"><input v-model="form.weekdays" :value="index" type="checkbox" />{{ day }}</label></fieldset><label class="feature-check"><input v-model="form.active" type="checkbox" />启用房间</label></fieldset><p class="feature-note">停用、注销与基础信息变更不会自动取消既有预约，新预约将按最新主数据校验。</p><p v-if="message" class="feature-success" role="status">{{ message }}</p><p v-if="saveError" class="feature-error" role="alert">{{ saveError }}</p><div v-if="!room?.retired" class="feature-actions"><button class="ui-button ui-button--primary" :disabled="saving">{{ saving ? '正在保存…' : existing ? '保存房间信息' : '登记房间' }}</button><button v-if="room" type="button" class="ui-button" :disabled="saving" @click="confirmRetire = true">永久注销房间</button></div><div v-if="confirmRetire" class="retire-confirm"><h3>确认注销整个房间？</h3><p>房间及其全部座位将永久注销，无法重新启用。历史引用保留。临时关闭请取消勾选“启用房间”。</p><div class="feature-actions"><button type="button" class="ui-button" :disabled="saving" @click="retire">确认永久注销</button><button type="button" class="ui-button" :disabled="saving" @click="confirmRetire = false">返回</button></div></div></form><div v-if="room" class="feature-actions room-actions"><RouterLink :to="`/m1/rooms/${room.id}/provenance`" class="ui-button">现场签到编码与状态来源</RouterLink></div><SeatManager v-if="room" :key="`${room.id}:${room.retired}`" :room-id="room.id" :retired="room.retired" /></template></div></template>
+<style scoped src="../../../shared/styles/feature.css"></style><style scoped>.back{margin-bottom:22px;font-size:13px}fieldset{border:0;padding:0;margin:0;min-width:0}.weekdays{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0}.weekdays legend{font-size:13px;margin-bottom:10px}.retire-confirm{margin-top:24px;padding:18px;border:1px solid #d5a0a0;border-radius:8px}.retire-confirm p{font-size:13px}.room-actions{margin-bottom:28px}.stable-id{overflow-wrap:anywhere}</style>

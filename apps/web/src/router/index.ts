@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { nextTick, watch } from 'vue';
 import { auth, restoreIdentity, hasPermission } from '../shared/auth';
+import { dRoutes } from '../modules/d/routes';
 import { m1Routes } from '../modules/m1/routes';
 import { m2Routes } from '../modules/m2/routes';
 import { m3Routes } from '../modules/m3/routes';
@@ -15,6 +16,7 @@ export const router = createRouter({
       meta: { title: '首页' },
     },
     ...m1Routes,
+    ...dRoutes,
     ...m2Routes.map(route => ({ ...route, meta: { ...route.meta, title: '整室申请' } })),
     ...m3Routes.map(route => ({ ...route, meta: { ...route.meta, title: '报修工单' } })),
     {
