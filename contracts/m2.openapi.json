@@ -1,0 +1,1286 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "M2 申请与审批公开接口（草案）",
+    "version": "0.1.0-proposed",
+    "description": "A0-01评审草案，尚未实现/注册/评审。A维护共同契约，B评审审批操作。DEC-02～09政策与认证/错误方案待确认。Bearer仅为候选认证载体，未承诺D实现；正式代码必须依据最终D契约。所有时间UTC Z；区间[start,end)。写请求先重新鉴权再按用户+动作+目标+键处理幂等；原输入重放原结果，同键异输入409，处理中同一operation_id。"
+  },
+  "x-contract-status": "proposed",
+  "x-runtime-implemented": false,
+  "x-decision-record": "services/m2/docs/decisions/A0-01-proposals.md",
+  "security": [
+    {
+      "userBearer": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "A",
+      "description": "申请与资源对接"
+    },
+    {
+      "name": "B",
+      "description": "审批与超时处理；仅契约草案，不是B实现"
+    }
+  ],
+  "paths": {
+    "/api/m2/applications": {
+      "post": {
+        "operationId": "createApplication",
+        "summary": "提交整室申请",
+        "tags": [
+          "A"
+        ],
+        "x-owner": "A",
+        "description": "可信身份m2.apply与房间范围校验；申请与B首级待办同一事务。政策为proposed；本文件不代表已实现。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "202": {
+            "description": "处理中；复用原operation，不自动创建新的逻辑操作。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationPendingResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreate"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listMyApplications",
+        "summary": "我的申请",
+        "tags": [
+          "A"
+        ],
+        "x-owner": "A",
+        "description": "仅本人申请；权限过滤先于计数和分页。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Mine"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/ApplicationStatusFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/m2/applications/{id}": {
+      "get": {
+        "operationId": "getApplication",
+        "summary": "查看申请详情",
+        "tags": [
+          "A"
+        ],
+        "x-owner": "A",
+        "description": "申请人仅看本人；审批人按有效/历史任务和已确认管理范围查看必要数据。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApplicationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/m2/applications/{id}/withdraw": {
+      "post": {
+        "operationId": "withdrawApplication",
+        "summary": "撤回申请",
+        "tags": [
+          "A"
+        ],
+        "x-owner": "A",
+        "description": "仅本人两种待审、未截止且无在途占用；状态变化与B关闭待办同一事务。幂等回放先于新操作version校验。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApplicationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "202": {
+            "description": "处理中；复用原operation，不自动创建新的逻辑操作。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationPendingResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/m2/applications/{id}/approval-progress": {
+      "get": {
+        "operationId": "getApprovalProgress",
+        "summary": "查看审批进度",
+        "tags": [
+          "B"
+        ],
+        "x-owner": "B",
+        "description": "遵循申请详情授权。RESOURCE_PENDING的二级任务可展示但不可重复操作。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApplicationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalProgress"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/m2/approval-tasks": {
+      "get": {
+        "operationId": "listApprovalTasks",
+        "summary": "可操作审批待办",
+        "tags": [
+          "B"
+        ],
+        "x-owner": "B",
+        "description": "按可信权限/院系或房间范围过滤。禁止自批；RESOURCE_PENDING不进入可操作待办列表。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Pending"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/m2/approval-records": {
+      "get": {
+        "operationId": "listMyApprovalRecords",
+        "summary": "我的审批记录",
+        "tags": [
+          "B"
+        ],
+        "x-owner": "B",
+        "description": "我的审批记录",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Mine"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalRecordPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/api/m2/approval-tasks/{id}/approve": {
+      "post": {
+        "operationId": "approveTask",
+        "summary": "通过当前审批",
+        "tags": [
+          "B"
+        ],
+        "x-owner": "B",
+        "description": "禁止跳级、自批、越权、过期和终态操作；一级通过仅入二级；二级须匹配M1确认且确认事务未截止才批准。未知资源结果持久化并202。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "202": {
+            "description": "处理中；复用原operation，不自动创建新的逻辑操作。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationPendingResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/m2/approval-tasks/{id}/reject": {
+      "post": {
+        "operationId": "rejectTask",
+        "summary": "驳回当前审批",
+        "tags": [
+          "B"
+        ],
+        "x-owner": "B",
+        "description": "意见去空白后1—500字；状态与关闭待办同事务；禁止RESOURCE_PENDING重复操作。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功响应；幂等重放保持原结果。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          },
+          "202": {
+            "description": "处理中；复用原operation，不自动创建新的逻辑操作。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationPendingResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "userBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "候选方案，D认证载体待确认；后端验证可信身份，不接收浏览器自报角色。若采用cookie等需修订该草案并统一公共HTTP层。"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "用户+动作+目标+键作用域；先重新鉴权，再回放原结果/同operation的202；同键不同规范输入409；重试不换键。"
+      },
+      "ApplicationId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "TaskId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "PageSize": {
+        "name": "page_size",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "Mine": {
+        "name": "scope",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "mine"
+          ],
+          "default": "mine"
+        }
+      },
+      "ApplicationStatusFilter": {
+        "name": "status",
+        "in": "query",
+        "schema": {
+          "$ref": "#/components/schemas/ApplicationStatus"
+        }
+      },
+      "Pending": {
+        "name": "status",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "pending"
+          ],
+          "default": "pending"
+        }
+      }
+    },
+    "responses": {
+      "401": {
+        "description": "未登录或凭证无效。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "无权限或管理范围不足。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "目标不存在，或按授权隐藏策略不可见。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "状态/version/幂等输入/资源冲突；以error.code区分。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "422": {
+        "description": "输入校验失败，统一ErrorResponse（含框架校验）。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "已知依赖不可用。可能已生效的资源请求需持久化恢复，不能据503推断未占用。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "UtcTimestamp": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "Z$",
+        "description": "RFC3339 UTC，以Z结尾。拒绝无时区输入，使用半开区间。"
+      },
+      "ApplicationStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING_LEVEL_1",
+          "PENDING_LEVEL_2",
+          "RESOURCE_PENDING",
+          "APPROVED",
+          "REJECTED",
+          "WITHDRAWN",
+          "EXPIRED"
+        ]
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PASSED",
+          "REJECTED",
+          "CLOSED"
+        ]
+      },
+      "ResourcePhase": {
+        "type": "string",
+        "enum": [
+          "NONE",
+          "ACTIVATING",
+          "RELEASING",
+          "NEEDS_ATTENTION"
+        ]
+      },
+      "ManagedScope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "scope_id"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "DEPARTMENT",
+              "ROOM"
+            ]
+          },
+          "scope_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "外部不透明ID，保留D原义；不假设UUID。"
+          }
+        }
+      },
+      "ApplicationCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "room_id",
+          "start_at",
+          "end_at",
+          "purpose",
+          "attendee_count"
+        ],
+        "properties": {
+          "room_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "外部不透明ID，保留D原义；不假设UUID。"
+          },
+          "start_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "end_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "\\S",
+            "description": "服务端去首尾空白后校验；不能只包含空白。"
+          },
+          "attendee_count": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "description": "申请人和院系从可信身份取得，禁止客户端传入。end_at>start_at、未来时段、容量/开放范围/路由资格由服务端验证；政策待DEC-02/05确认。"
+      },
+      "ApplicationView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "application_id",
+          "applicant_id",
+          "applicant_department_id",
+          "room_id",
+          "start_at",
+          "end_at",
+          "deadline_at",
+          "created_at",
+          "updated_at",
+          "purpose",
+          "attendee_count",
+          "status",
+          "version",
+          "current_step",
+          "termination_reason",
+          "last_resource_error",
+          "resource_phase"
+        ],
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicant_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "外部不透明ID，保留D原义；不假设UUID。"
+          },
+          "applicant_department_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "外部不透明ID，保留D原义；不假设UUID。"
+          },
+          "room_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "外部不透明ID，保留D原义；不假设UUID。"
+          },
+          "start_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "end_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "deadline_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "\\S",
+            "description": "服务端去首尾空白后校验；不能只包含空白。"
+          },
+          "attendee_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "申请乐观锁版本；与M1 revision分开。初始1为本草案建议，待评审。"
+          },
+          "current_step": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "enum": [
+              1,
+              2,
+              null
+            ]
+          },
+          "termination_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_resource_error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resource_phase": {
+            "$ref": "#/components/schemas/ResourcePhase"
+          }
+        },
+        "description": "终态current_step=null；RESOURCE_PENDING时current_step=2。错误只含安全说明，不泄露内部凭证。"
+      },
+      "TaskView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_id",
+          "application_id",
+          "application_version",
+          "step",
+          "status",
+          "required_permission",
+          "managed_scope",
+          "created_at"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "申请乐观锁版本；与M1 revision分开。初始1为本草案建议，待评审。"
+          },
+          "step": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "required_permission": {
+            "type": "string"
+          },
+          "managed_scope": {
+            "$ref": "#/components/schemas/ManagedScope"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "ApprovalRecordView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_id",
+          "application_id",
+          "actor_id",
+          "step",
+          "action",
+          "comment",
+          "acted_at"
+        ],
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "外部不透明ID，保留D原义；不假设UUID。"
+          },
+          "step": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "PASSED",
+              "REJECTED"
+            ]
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "acted_at": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
+      "ApprovalProgress": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "application_id",
+          "current_step",
+          "tasks",
+          "records"
+        ],
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "current_step": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "enum": [
+              1,
+              2,
+              null
+            ]
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskView"
+            }
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalRecordView"
+            }
+          }
+        }
+      },
+      "OperationPendingResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation_id",
+          "application",
+          "retry_after_seconds"
+        ],
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retry_after_seconds": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "description": "复用原operation；有application时轮询详情，尚未持久化时按间隔用原键及原输入重放，不创建新键。"
+      },
+      "WithdrawRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_version"
+        ],
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "申请乐观锁版本；与M1 revision分开。初始1为本草案建议，待评审。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ApproveRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_version"
+        ],
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "申请乐观锁版本；与M1 revision分开。初始1为本草案建议，待评审。"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "RejectRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_version",
+          "comment"
+        ],
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "申请乐观锁版本；与M1 revision分开。初始1为本草案建议，待评审。"
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "\\S",
+            "description": "服务端去首尾空白后校验；不能只包含空白。"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message",
+              "request_id",
+              "details"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string"
+              },
+              "request_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "details": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "暂拟M2统一错误，包含422。最终公共错误格式待DEC-08评审；details不得泄露凭证、SQL或他人数据。"
+      },
+      "ApplicationPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationView"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "description": "先授权过滤再分页，total只统计授权范围。"
+      },
+      "TaskPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskView"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "description": "先授权过滤再分页，total只统计授权范围。"
+      },
+      "ApprovalRecordPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalRecordView"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "description": "先授权过滤再分页，total只统计授权范围。"
+      }
+    }
+  }
+}
