@@ -1,12 +1,12 @@
 # M2 内部协议草案
 
-版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。本批只有签名文档及公开OpenAPI，尚无contracts.py、数据库或可调用port实现。不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
+版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。A0-02 已在 `services/m2/contracts.py` 实现 Actor 和 TimeRange；其余DTO、枚举及以下Port仍为签名草案，无数据库或可调用port实现，不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
 
 公开JSON类型、字段/错误/鉴权/分页见 [M2 OpenAPI](../../../contracts/m2.openapi.json)。当前只作结构检查；JSON合法不意味着业务API可用。
 
 ## 共同类型与时间
 
-拟放 services/m2/contracts.py，只依赖共同类型，不导入审批/申请用例。DTO取公开契约中的ApplicationCreate、ApplicationView、TaskView、ApprovalRecordView、ApprovalProgress、OperationPendingResponse和状态枚举。
+唯一代码入口为 services/m2/contracts.py，只依赖Python标准库，不导入审批/申请用例。Actor字段已落实；TimeRange为新增内部值对象，接受两个带时区datetime、归一UTC并拒绝空/反向区间，overlaps按半开区间比较，不判断房间是否可用。Actor构造只校验数据形状，不认证用户、不授予权限；集合在构造时冻结，外部ID保持原义，必须由可信适配器提供。其余类型以下仍是实现目标。DTO取公开契约中的ApplicationCreate、ApplicationView、TaskView、ApprovalRecordView、ApprovalProgress、OperationPendingResponse和状态枚举。
 
 - Actor：user_id: str；permission_codes: frozenset[str]；department_id: str | None；managed_department_ids/managed_room_ids: frozenset[str]；manage_all_departments/manage_all_rooms: bool = False。必须来自可信身份适配器，空集合不等于所有范围。
 - ManagedScope：kind为DEPARTMENT/ROOM；scope_id不透明字符串。申请保存已验证院系及路由快照，缺路由不能产生无人审批的申请。

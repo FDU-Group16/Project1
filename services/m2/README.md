@@ -1,6 +1,6 @@
 # M2 开发入口
 
-当前仅 `services.m2.main:app` 的健康检查可用。A0-01新增规范草案；申请、审批、数据库、迁移和worker尚未实现。
+当前仅 `services.m2.main:app` 的健康检查可用。A0-01新增规范草案；A0-02新增可导入的Actor和TimeRange及14项行为测试。申请、审批、数据库、迁移和worker尚未实现。
 
 先读根与本模块AGENTS、[基线](docs/baseline.md)、[内部协议](docs/contracts.md)、[依赖](docs/external-contracts.md)、[A进度](docs/progress/A.md)。公开契约为 [M2 OpenAPI](../../contracts/m2.openapi.json) 0.1.0-proposed，不是运行时路由。
 
@@ -28,3 +28,15 @@ uv run --frozen python -c 'import json; from fastapi.openapi.models import OpenA
 `uv run --frozen uvicorn services.m2.main:app --host 127.0.0.1 --port 3102`是原有健康服务启动方式，只有确认端口空闲才运行；本批未单独验证3102，check.sh使用3912。
 
 pytest/Alembic/worker命令尚未落地，不预写可用；后续任务先确认DEC-07与隔离测试数据库，再给经过实测的命令。查看完整验证边界与待决项：[A0-01任务](docs/tasks/A0-01.md)。
+
+## A0-02：共同数据基础的操作验收
+
+在仓库根目录使用Python 3.12运行（已配置项目环境时可用`.venv/bin/python`）：
+
+```bash
+python -m unittest discover -s services/m2/tests -p 'test_*.py' -v
+```
+
+应看到14项测试通过。测试直接导入`services.m2.contracts.Actor/TimeRange`；同一时刻的不同UTC偏移归一化一致，相邻时段不重叠，无时区/反向时间被拒绝，权限集合不会随调用方集合变化。Actor不验证身份；TimeRange不查询房间占用。通过这些测试不等于申请已落库或审批可用。没有测试替身、数据库或新依赖；共享CI暂未运行该单测命令。
+
+设计及完整边界见 [A0-02任务](docs/tasks/A0-02.md)。后续B可复用已实现的两个值对象，其余Port/Base/UoW仍不能导入或宣称就绪。
