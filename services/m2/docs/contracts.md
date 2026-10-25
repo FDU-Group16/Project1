@@ -1,12 +1,12 @@
 # M2 内部协议草案
 
-版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。A0-02 已在 `services/m2/contracts.py` 实现 Actor 和 TimeRange；其余DTO、枚举及以下Port仍为签名草案，无数据库或可调用port实现，不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
+版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。A0-02 已在 `services/m2/contracts.py` 实现 Actor 和 TimeRange；A0-03本地新增ApplicationCreate（尚待验收），其余DTO、枚举及以下Port仍为签名草案，无数据库或可调用port实现，不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
 
 公开JSON类型、字段/错误/鉴权/分页见 [M2 OpenAPI](../../../contracts/m2.openapi.json)。当前只作结构检查；JSON合法不意味着业务API可用。
 
 ## 共同类型与时间
 
-唯一代码入口为 services/m2/contracts.py，只依赖Python标准库，不导入审批/申请用例。Actor字段已落实；TimeRange为新增内部值对象，接受两个带时区datetime、归一UTC并拒绝空/反向区间，overlaps按半开区间比较，不判断房间是否可用。Actor构造只校验数据形状，不认证用户、不授予权限；集合在构造时冻结，外部ID保持原义，必须由可信适配器提供。其余类型以下仍是实现目标。DTO取公开契约中的ApplicationCreate、ApplicationView、TaskView、ApprovalRecordView、ApprovalProgress、OperationPendingResponse和状态枚举。
+唯一代码入口为 services/m2/contracts.py，使用Python标准库及工程已锁定的Pydantic，不导入审批/申请用例。Actor字段已落实；TimeRange为新增内部值对象，接受两个带时区datetime、归一UTC并拒绝空/反向区间，overlaps按半开区间比较，不判断房间是否可用。Actor构造只校验数据形状，不认证用户、不授予权限；集合在构造时冻结，外部ID保持原义，必须由可信适配器提供。其余类型以下仍是实现目标。DTO取公开契约中的ApplicationCreate、ApplicationView、TaskView、ApprovalRecordView、ApprovalProgress、OperationPendingResponse和状态枚举。
 
 - Actor：user_id: str；permission_codes: frozenset[str]；department_id: str | None；managed_department_ids/managed_room_ids: frozenset[str]；manage_all_departments/manage_all_rooms: bool = False。必须来自可信身份适配器，空集合不等于所有范围。
 - ManagedScope：kind为DEPARTMENT/ROOM；scope_id不透明字符串。申请保存已验证院系及路由快照，缺路由不能产生无人审批的申请。
@@ -89,3 +89,7 @@ B在进入RESOURCE_PENDING的事务持久化ApprovalAttempt：operation_id、app
 B需评审：上述签名、租约过期回执处理、结果落盘与编排崩溃恢复、关闭失败原子回滚、唯一审批意图/记录、迁移parent。本批不创建B文件或宣称B接受。
 
 后续G2/G3/G4至少验证：initialize/close_pending抛错无部分提交；并发同键仅一申请/待办；两领取者不共享有效lease，旧token不能写回；M1已应用但本地失败可原PUT恢复；释放先到、迟到ACTIVE、到截止只提升恢复目标不重复增加revision。外部服务替身只能验证M2内部行为，G5需真实服务证据。
+
+## ApplicationCreate 本地实现边界（A0-03）
+
+按公开OpenAPI现有五字段校验，多余字段一律拒绝，不能传入申请人/院系/审批状态。用途修剪后检查长度，人数严格正整数，外部room_id只检查非空字符串并保留原义。公开时间只接受UTC Z字符串并校验真实日期及时序；内部TimeRange仍可接受其他带时区datetime。通过校验仅表示输入结构可用，不表示房间存在/开放、身份可信或业务申请成功。未注册路由，未更改proposed状态；ApplicationView和业务Port仍未实现。

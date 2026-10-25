@@ -1,12 +1,12 @@
 # M2 工程基线
 
-核对日期：2026-10-24。已整合A0-01/B0历史；A0-02仅实现Actor/TimeRange，完整M2-BASE及业务政策尚未成立。
+核对日期：2026-10-24。已整合A0-01/B0历史；A0-02的Actor/TimeRange已上传；A0-03本地新增ApplicationCreate待验收。完整M2-BASE及业务政策尚未成立。
 
 | 项目 | 证据/状态 |
 | --- | --- |
 | 仓库 | https://github.com/FDU-Group16/Project1 |
 | 实际工程基线 | develop@99ce858a2bbf8caa2f4b226a83f989c54d6992d1，首次显式fetch成功，本地已检出 |
-| 本次上传目标 | 用户明确授权本次直接上传m2；已fetch到e307d29b1470ca5ec889c6c18a9096d4080cc479并在本地fcdb86c无冲突整合，保留A/B历史。m2已含工程基线，不再落后13提交；上传结果以实际远端为准 |
+| 当前工作与上传分支 | A按用户最新指示在专用目录的m2开发，个人分支已删除；A0-01/02已上传m2@1ad9fd08fee456dd4fd9cd706bf8ac9215f09743，本轮远端同SHA。A0-03仅本地待验收 |
 | M2-BASE | A0-02已实现可导入Actor/TimeRange；没有Base/Session/UoW/模型/迁移/port/装配，不能称共同基础完整 |
 | M2入口 | services.m2.main:app，仅GET /healthz |
 | Web入口 | apps/web/src/modules/m2/routes.ts，仅静态/m2 |
@@ -20,7 +20,7 @@
 
 ## M2-BASE 的拟议文件与实现状态
 
-- contracts.py：Actor、TimeRange及输入校验已实现；其他DTO/枚举/Protocol未实现。行为测试见tests/test_contracts.py；签名见 [内部协议](contracts.md)。
+- contracts.py：Actor、TimeRange已上传；ApplicationCreate输入DTO本地已实现待验收；其他DTO/枚举/Protocol未实现。行为测试见tests/test_contracts.py；签名见 [内部协议](contracts.md)。
 - db.py / uow.py：唯一Base、Session工厂、用例事务，待技术/schema决策。
 - state.py / application_models.py：合法状态与申请/幂等/命令，待政策及数据方案。
 - resource_commands.py：版本、持久化命令、claim/续租/回执/重试，待共同签名评审和数据库。
@@ -29,6 +29,6 @@
 
 ## 下一步与证据门禁
 
-A0-01已由本人验收并上传；本次按新的明确授权将A0-01和A0-02整合后直接上传m2。团队确认 [决策清单](decisions/A0-01-proposals.md) 中具体数据库依赖/隔离配置后，后续落实Base/UoW/模型；业务政策未确认部分继续阻塞。B核对签名和事务边界；基础经评审集成后双方记录同一实际SHA再组合。
+A0-01已由本人验收并上传；A0-01和A0-02已按明确授权整合上传m2。本批A0-03未提交未上传。团队确认 [决策清单](decisions/A0-01-proposals.md) 中具体数据库依赖/隔离配置后，后续落实Base/UoW/模型；业务政策未确认部分继续阻塞。B核对签名和事务边界；基础经评审集成后双方记录同一实际SHA再组合。
 
 G0只证明骨架可检查；G1当前只覆盖静态契约；G2～G6均未完成。共享检查当前不自动读取M2新契约，不自动运行未来M2测试。

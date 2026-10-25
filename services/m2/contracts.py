@@ -6,6 +6,10 @@ browser-supplied permissions. These types are only part of M2-BASE.
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import re
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def _identifier(value: str, name: str) -> str:
@@ -76,3 +80,45 @@ class TimeRange:
         if not isinstance(other, TimeRange):
             raise TypeError("other must be a TimeRange")
         return self.starts_at < other.ends_at and other.starts_at < self.ends_at
+
+
+class ApplicationCreate(BaseModel):
+    """Local input validation for the proposed API; not an application service.
+
+    Never accepts identity or approval claims. Trusted identity, room access,
+    capacity and future-time policies must still be checked by the use case.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    room_id: str = Field(strict=True, min_length=1)
+    start_at: datetime = Field(json_schema_extra={"pattern": "Z$"})
+    end_at: datetime = Field(json_schema_extra={"pattern": "Z$"})
+    purpose: str = Field(strict=True, min_length=1, max_length=500, pattern=r"\S")
+    attendee_count: int = Field(strict=True, ge=1)
+
+    @field_validator("purpose", mode="before")
+    @classmethod
+    def trim_purpose(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("start_at", "end_at", mode="before")
+    @classmethod
+    def require_utc_string(cls, value: object) -> str:
+        # Public contract requires RFC3339 UTC strings ending in Z; internal
+        # TimeRange deliberately accepts other aware datetime offsets as well.
+        if not isinstance(value, str) or re.fullmatch(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z",
+            value,
+        ) is None:
+            raise ValueError("timestamp must be an RFC3339 UTC string ending in Z")
+        return value
+
+    @model_validator(mode="after")
+    def validate_interval(self) -> Self:
+        TimeRange(self.start_at, self.end_at)
+        return self
+
+    @property
+    def time_range(self) -> TimeRange:
+        return TimeRange(self.start_at, self.end_at)

@@ -37,6 +37,26 @@ pytest/Alembic/worker命令尚未落地，不预写可用；后续任务先确�
 python -m unittest discover -s services/m2/tests -p 'test_*.py' -v
 ```
 
-应看到14项测试通过。测试直接导入`services.m2.contracts.Actor/TimeRange`；同一时刻的不同UTC偏移归一化一致，相邻时段不重叠，无时区/反向时间被拒绝，权限集合不会随调用方集合变化。Actor不验证身份；TimeRange不查询房间占用。通过这些测试不等于申请已落库或审批可用。没有测试替身、数据库或新依赖；共享CI暂未运行该单测命令。
+A0-02时为14项测试；包含下方A0-03后应看到25项全部通过。测试直接导入`services.m2.contracts.Actor/TimeRange`；同一时刻的不同UTC偏移归一化一致，相邻时段不重叠，无时区/反向时间被拒绝，权限集合不会随调用方集合变化。Actor不验证身份；TimeRange不查询房间占用。通过这些测试不等于申请已落库或审批可用。没有测试替身、数据库或新依赖；共享CI暂未运行该单测命令。
 
 设计及完整边界见 [A0-02任务](docs/tasks/A0-02.md)。后续B可复用已实现的两个值对象，其余Port/Base/UoW仍不能导入或宣称就绪。
+
+## A0-03：本地申请输入校验（待验收）
+
+代码在`contracts.py`的ApplicationCreate；只做输入验证，不代表申请已提交。使用现有项目环境，在仓库根目录运行：
+
+```bash
+.venv/bin/python - <<'PYCODE'
+from pydantic import ValidationError
+from services.m2.contracts import ApplicationCreate
+payload = dict(room_id="demo-room", start_at="2026-10-29T02:00:00Z",
+               end_at="2026-10-29T03:00:00Z", purpose="  课程讨论  ", attendee_count=6)
+print("本地校验通过，未保存：", ApplicationCreate.model_validate(payload).model_dump_json())
+try:
+    ApplicationCreate.model_validate(payload | {"applicant_id": "forged"})
+except ValidationError as exc:
+    print("额外身份字段被拒绝：", exc.errors()[0]["type"])
+PYCODE
+```
+
+预期：第一行用途变为“课程讨论”，第二行出现`extra_forbidden`。这些是合成输入，未连接身份、房间服务或数据库。`python -m unittest discover -s services/m2/tests -p 'test_*.py' -v`目前共25项测试；共享CI未接入该命令。任务与完整边界见[A0-03](docs/tasks/A0-03.md)。
