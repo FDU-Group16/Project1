@@ -1,6 +1,6 @@
 # M2 内部协议草案
 
-版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。A0-02 已在 `services/m2/contracts.py` 实现 Actor 和 TimeRange；A0-03本地新增ApplicationCreate（尚待验收），其余DTO、枚举及以下Port仍为签名草案，无数据库或可调用port实现，不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
+版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。A0-02 已在 `services/m2/contracts.py` 实现 Actor 和 TimeRange；A0-03已上传ApplicationCreate，其余DTO、枚举及以下Port仍为签名草案，无数据库或可调用port实现，不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
 
 公开JSON类型、字段/错误/鉴权/分页见 [M2 OpenAPI](../../../contracts/m2.openapi.json)。当前只作结构检查；JSON合法不意味着业务API可用。
 
@@ -93,3 +93,11 @@ B需评审：上述签名、租约过期回执处理、结果落盘与编排崩�
 ## ApplicationCreate 本地实现边界（A0-03）
 
 按公开OpenAPI现有五字段校验，多余字段一律拒绝，不能传入申请人/院系/审批状态。用途修剪后检查长度，人数严格正整数，外部room_id只检查非空字符串并保留原义。公开时间只接受UTC Z字符串并校验真实日期及时序；内部TimeRange仍可接受其他带时区datetime。通过校验仅表示输入结构可用，不表示房间存在/开放、身份可信或业务申请成功。未注册路由，未更改proposed状态；ApplicationView和业务Port仍未实现。
+
+## 请求摘要与作用域实现（A0-04，本地待验收）
+
+`services/m2/idempotency.py`实现不可变`IdempotencyScope(user_id, action, target, key)`；`storage_key`返回四元组，不拼接分隔符，不trim/casefold。标识值必须是非空字符串，键沿用公开契约minLength=1；可信user_id由未来身份适配器提供。动作和目标由路由/用例决定，不取浏览器自报值。创建申请的建议动作/目标为`create`和`/applications`，尚无注册路由。
+
+`application_input_digest(ApplicationCreate)`重新校验JSON输入，对已规范化五字段按键排序、无额外空格、UTF-8序列化，以`m2.application-create.v1`加NUL作为域前缀计算SHA-256，返回`m2.application-create.v1:sha256:<hex>`。用途首尾空白和等价UTC小数秒表示被归一化；房间ID、用途内部空白和大小写保留。模型新增字段或规范化规则变化时，必须评估已存幂等记录兼容性并显式版本化，不能静默更改旧摘要。
+
+该函数不读写幂等记录，不鉴权、不作业务冲突决定、无HTTP 409/202回放。后续数据库仍须联合唯一约束、业务意图和结果同事务、失败回滚；B提出的审批初始化可信快照及资源回执持久领取/终结入口仍待单独共同评审。本批不修改这些签名或批准政策。摘要不构成匿名化，不输出实际申请内容或摘要到公共日志。

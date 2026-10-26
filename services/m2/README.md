@@ -41,7 +41,7 @@ A0-02时为14项测试；包含下方A0-03后应看到25项全部通过。测试
 
 设计及完整边界见 [A0-02任务](docs/tasks/A0-02.md)。后续B可复用已实现的两个值对象，其余Port/Base/UoW仍不能导入或宣称就绪。
 
-## A0-03：本地申请输入校验（待验收）
+## A0-03：本地申请输入校验（2026-10-25已上传m2）
 
 代码在`contracts.py`的ApplicationCreate；只做输入验证，不代表申请已提交。使用现有项目环境，在仓库根目录运行：
 
@@ -60,3 +60,26 @@ PYCODE
 ```
 
 预期：第一行用途变为“课程讨论”，第二行出现`extra_forbidden`。这些是合成输入，未连接身份、房间服务或数据库。`python -m unittest discover -s services/m2/tests -p 'test_*.py' -v`目前共25项测试；共享CI未接入该命令。任务与完整边界见[A0-03](docs/tasks/A0-03.md)。
+
+## A0-04：申请重试识别基础（本地待验收）
+
+`idempotency.py`提供作用域和输入摘要；数据库唯一约束及回放尚未实现。以下演示只比较合成输入，不保存申请：
+
+```bash
+.venv/bin/python - <<'PYCODE'
+from services.m2.contracts import ApplicationCreate
+from services.m2.idempotency import IdempotencyScope, application_input_digest
+payload = dict(room_id="demo-room", start_at="2026-10-29T02:00:00Z",
+               end_at="2026-10-29T03:00:00Z", purpose="课程讨论", attendee_count=6)
+def digest(data):
+    return application_input_digest(ApplicationCreate.model_validate(data))
+print("相同内容重试：", digest(payload) == digest(payload | {"purpose": "  课程讨论  "}))
+print("人数改变被识别：", digest(payload) != digest(payload | {"attendee_count": 7}))
+a = IdempotencyScope("demo-user-a", "create", "/applications", "demo-key")
+b = IdempotencyScope("demo-user-b", "create", "/applications", "demo-key")
+print("不同用户作用域隔离：", a.storage_key != b.storage_key)
+print("仅本地比较；未保存申请、未鉴权、未回放HTTP结果")
+PYCODE
+```
+
+预期前三行均为True。当前M2单测共35项，命令仍为`python -m unittest discover -s services/m2/tests -p 'test_*.py' -v`。精确范围和验收见[A0-04任务](docs/tasks/A0-04.md)。摘要不是授权凭据；未来必须先鉴权再查幂等记录，作用域四字段须在业务事务内受数据库联合唯一约束保护。
