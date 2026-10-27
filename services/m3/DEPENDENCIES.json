@@ -5,6 +5,15 @@
   "status_file": "services/m3/STATUS.md",
   "dependencies": [
     {
+      "id": "D-TEST-ACCOUNTS",
+      "providers": ["D-01"],
+      "status": "temporary",
+      "inventory": "services/d/tasks/2026-10-27-test-accounts.md",
+      "contract": {"path": "contracts/test-accounts.md", "version": "0.1.0", "status": "proposed"},
+      "marker_paths": ["services/d/test_accounts/__init__.py", "services/d/main.py"],
+      "verification": null
+    },
+    {
       "id": "M3-D-DEV",
       "providers": ["D-01", "D-02"],
       "status": "integrating",

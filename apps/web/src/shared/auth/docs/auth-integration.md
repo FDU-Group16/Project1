@@ -1,6 +1,6 @@
 # 公共身份消费与临时依赖记录
 
-更新：2026-10-27。原实现与验收记录来自 2026-10-22；本次补充临时接口注释及可修改范围，不改变运行行为，不表示真实 D-01 已联调或部署。
+更新：2026-10-27。原实现与验收记录来自 2026-10-22；后续 M3 共享会话和课程测试账号补充见文末。临时账号验证不表示正式校园 D-01 已联调或部署。
 
 ## 范围与验收
 
@@ -45,3 +45,20 @@
 M3 使用同一个公共会话与 HTTP 客户端。显式开发身份增加 `dev-repair-admin`（repair:dispatch、repair:report）、`dev-technician-1`/`dev-technician-2`（repair:work、repair:report），departmentId 均为 null；不授予 room:manage 或 operations:read。已有 seat:reserve 学生身份可报修。身份列表、前端选择器仍归 WEB-D01-IDENTITY 库存，新增 M3 消费登记 WEB-M3-D01。真实 D-01 交付时由 Web/M1/M3 与 M2 联合核验，再清理整个公共开发身份机制；本次未将拟议维修权限或人员目录当作已实现的 D 服务。
 
 共享请求增加 M3 地址与嵌套错误格式兼容；保留 M1/D Problem 错误，同时组合调用方取消、15 秒超时和身份版本检查。详细证据与未完成项见 [M3 集成记录](../../../../../../services/m3/docs/develop-integration.md)。
+
+## 2026-10-27 课程测试密码账号补充
+
+用户授权在课程测试站使用四个有限期的测试账号，公共 Web 继续使用原有密码登录 HTTP；提供方及部署责任、开关和数据边界见 [D 测试账号任务](../../../../../../services/d/tasks/2026-10-27-test-accounts.md)，附加字段来自 [临时账号契约 v0.1.0 proposed](../../../../../../contracts/test-accounts.md)。父任务集成，D-01/M2、D-02/M1、M3、公共 Web 及部署负责人参与合入前评审。
+
+| 项 | 课程测试站扩展 |
+| --- | --- |
+| 启用 | 服务端显式启用测试账号；Web 在未登录的密码表单读取可选 `/api/v1/auth/context`，只认 `mode: test-accounts`。未知值、404、网络失败不阻止密码登录，也不启用开发身份 |
+| 临时路径 | 仍在 `WEB-D01-IDENTITY` 已登记路径：`LoginPage.vue` 的 context 请求和提示、`session.ts` 可选 `Identity.testAccount`、`AppLayout.vue` 测试身份横幅及样式；不新增第二套登录状态或 token |
+| 可见内容 | 仅四个公开用户名及角色说明；不展示密码。密码只提交给原有 login 接口，不保存。登录/me 返回 `testAccount: true` 才显示公共测试横幅 |
+| 与开发模式区别 | 测试密码由真实服务验证并签发有限期会话，刷新验证 `/me`，退出撤销 `/logout`；没有 `synthetic` 旁路。生产构建继续禁止开发身份选择器 |
+| 清理条件 | 正式 D-01 就绪并通过真实密码/会话/角色验收后，由提供方和消费方协调移除测试 context、testAccount 标识及展示分支；保留正常密码表单、HTTP 客户端、会话恢复与退出、权限清理 |
+| 验证入口 | `apps/web/tests/test-accounts.browser.cjs` 从 `WEB_TEST_ACCOUNTS_FILE` 读取种子私有 JSON，不打印凭据；四角色登录、错误密码、刷新/me、退出撤销、context 兼容、320px、M2；设置 `M3_TEST_ROOM_ID` 增加真实工单全流程 |
+
+公共客户端修复匿名 401 的页面重建问题：没有会话时不调用 `clearSession`，避免错误密码导致 `auth.epoch` 增加、登录页重建并丢失错误提示。有会话的 401 仍清除会话；旧身份响应仍按版本拒绝，不能清除新身份。`shared-client.browser.cjs` 增加匿名 401 回归并保留已有当前会话 401、取消和跨身份晚响应检查。
+
+实现、静态检查与实际浏览器/部署证据分开登记在 [Web STATUS](../../../../STATUS.md)；提供方正式状态仍为 not_ready。原有开发身份与本次测试账号都是可移除的临时依赖，不把密码测试能力登记为正式 D-01 交付。

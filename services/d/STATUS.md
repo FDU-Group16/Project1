@@ -1,5 +1,11 @@
 # D 模块状态与交接
 
+## 2026-10-27：用户授权的公网测试账号
+
+新增独立 [test_accounts](test_accounts/README.md) 适配器，支持密码登录、当前身份、退出撤销与维修人员目录；仅显式 staging/test 启用，默认生产关闭。复用原 PostgreSQL 的 d schema，新增 `002_test_accounts.sql`，账号种子单独幂等执行，原 D-02/M1/M3 数据不重置。
+
+任务、精确临时库存与验证见 [测试账号任务](tasks/2026-10-27-test-accounts.md)；[M3 消费机器清单](../m3/DEPENDENCIES.json) 登记 `D-TEST-ACCOUNTS`。这是临时合成账号，不是 M2 的正式校园 D-01；PROVIDES 保持 not_ready。本机 PostgreSQL 16.2 账号行为测试12项、根检查、真实D/M1/M3密码HTTP全流程及Chrome验收通过；本轮PG18 CI、服务器创建和部署未执行。
+
 更新时间：2026-10-27。D-02 实现随 `m1@0b37222` 按用户授权快进集成至本地 `develop`；[本次集成与推送记录](../../docs/tasks/2026-10-27-m1-develop-integration.md)。D 子域分工已按用户确认登记为确定：M1 负责 D-02，M2 负责 D-01，M3 负责 D-03/D-04；其他 D 能力保持外部依赖，不代表人工契约审查或部署验收。
 
 ## 已实现

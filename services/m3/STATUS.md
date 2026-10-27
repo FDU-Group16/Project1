@@ -1,5 +1,7 @@
 # M3 模块状态与交接（develop 适配副本）
 
+2026-10-27 后续：按用户公网体验需求，集成临时测试密码账号，复用已有 PostgreSQL。`D-TEST-ACCOUNTS` 临时库存、作用范围及本机/部署证据见 [任务记录](../d/tasks/2026-10-27-test-accounts.md)；仍不代表正式 D-01/03/04 就绪。此轮基线已安全快进至实际 PR #3 合并 `91ff58c`，本次账号变更尚未部署。
+
 更新时间：2026-10-27。当前副本 `工程伦理/develop/Project1`，分支 `m3-develop`，基线 `origin/develop@13dcd59f9a46c859f8593b530d7aa54c27faaf1f`。原重建目录保持不动。范围与评审责任见 [适配记录](docs/develop-integration.md)；[依赖登记](DEPENDENCIES.json) 与 [精确清单](docs/dependencies.md) 记录未完成提供方，不以旧工作区验证替代本轮证据。
 
 ## 当前实现

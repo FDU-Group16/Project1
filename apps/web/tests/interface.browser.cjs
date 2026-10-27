@@ -17,7 +17,9 @@ const checks = [];
     const businessRequests = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('request', request => {
-      if (/\/(api|internal)\//.test(new URL(request.url()).pathname)) businessRequests.push(request.url());
+      const pathname = new URL(request.url()).pathname;
+      // Optional, public login-mode metadata is not a business operation. All other API traffic remains forbidden here.
+      if (/\/(api|internal)\//.test(pathname) && !(request.method() === 'GET' && pathname === '/api/d/api/v1/auth/context')) businessRequests.push(request.url());
     });
     const visit = async target => {
       const response = await page.goto(new URL(target, base).href);

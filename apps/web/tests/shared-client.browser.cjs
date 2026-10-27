@@ -32,7 +32,7 @@ const checks = [];
   }, { service, path, cancellable });
   const state = () => page.evaluate(async () => {
     const { auth, storedSession } = await import('/src/shared/auth/session.ts');
-    return { id: auth.session?.user.id ?? null, notice: auth.notice, stored: storedSession()?.user.id ?? null };
+    return { id: auth.session?.user.id ?? null, notice: auth.notice, stored: storedSession()?.user.id ?? null, epoch: auth.epoch };
   });
   const delayed = (name, status, body) => {
     let release;
@@ -86,6 +86,14 @@ const checks = [];
     assert.equal(cleared.stored, null);
     assert.match(cleared.notice, /登录已过期|无效/);
     checks.push('Current-session 401 clears shared memory/storage and records the expiry notice');
+
+    const anonymousDenied = await invoke('d', '/api/v1/__transport-test/unauthorized');
+    assert.equal(anonymousDenied.status, 401);
+    assert.equal(anonymousDenied.code, 'UNAUTHENTICATED');
+    const anonymous = await state();
+    assert.equal(anonymous.id, null);
+    assert.equal(anonymous.epoch, cleared.epoch, 'Anonymous login failure must not remount the form and erase its error');
+    checks.push('Anonymous 401 preserves the identity epoch so password errors remain visible');
 
     await session('cancellation');
     const releaseCancel = delayed('cancel', 200, { value: 'must not be delivered' });

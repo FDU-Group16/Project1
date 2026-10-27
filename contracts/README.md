@@ -1,5 +1,7 @@
 # 共享接口契约与实现登记
 
+临时课程测试登录新增 [test-accounts.md](test-accounts.md)（0.1.0，proposed），保持现有 login/me/logout 与维修目录消费字段，额外提供可选 context 和 testAccount 标记。默认关闭、账号到期、生产禁用；不是正式 D-01 的就绪声明。具体本机和线上证据见 [任务记录](../services/d/tasks/2026-10-27-test-accounts.md)。
+
 状态：**proposed / 待组内评审**。本目录记录模块之间通过网络调用的接口，不代表接口已经实现，也不代表业务规则已经由全组定案。
 
 FastAPI 服务运行时生成的 OpenAPI 页面只描述当时已注册的路由；跨模块接口的评审与版本记录仍以本目录中的提案文件为准。当前健康检查不能视为下述业务接口已实现。

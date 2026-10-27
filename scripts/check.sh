@@ -13,6 +13,7 @@ fi
 
 "${python_cmd[@]}" scripts/check-dependencies.py
 "${python_cmd[@]}" scripts/test-dependencies.py
+"${python_cmd[@]}" scripts/test-staging-test-accounts.py
 node scripts/check-contracts.mjs
 "${python_cmd[@]}" -m services.m3.export_contract --check
 "${python_cmd[@]}" -m compileall -q services
