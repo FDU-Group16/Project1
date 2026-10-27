@@ -8,6 +8,7 @@ FastAPI 服务运行时生成的 OpenAPI 页面只描述当时已注册的路由
 
 ## 本轮范围
 
+- M3 首轮接口开发基线见 [`m3-work-orders.md`](m3-work-orders.md) 与 [`m3-work-orders.openapi.json`](m3-work-orders.openapi.json)，版本 `0.1.0-proposed`。本地实现/验证范围由 [M3 状态](../services/m3/STATUS.md) 记录；D 身份和真实 M1 写回仍待集成，接口实现不等于团队批准或正式部署。
 - [`m1-room-blocks.openapi.json`](m1-room-blocks.openapi.json) 定义 M2、M3 向 M1 同步整室占用或下架状态的内部 HTTP 接口。
 - M2 在整教室申请获批后占用指定时段；驳回、撤销或超时撤销后释放。M3 在自习室维修中时下架全部座位，验收通过后恢复。
 - M1 是座位可预约状态的写入方，须保留来源 `M1`、`M2`、`M3` 与来源 ID，以支持追溯。M2、M3 不直接写 M1 数据库。

@@ -13,6 +13,8 @@ fi
 
 node scripts/check-contracts.mjs
 "${python_cmd[@]}" -m compileall -q services
+"${python_cmd[@]}" -m unittest discover -s services/m3/tests -p 'test_*.py'
 "${python_cmd[@]}" scripts/smoke.py
 npm --prefix apps/web run typecheck
+node --test apps/web/src/modules/m3/tests/adapter.test.cjs
 npm --prefix apps/web run build

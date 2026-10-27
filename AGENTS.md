@@ -8,7 +8,7 @@ Keep module-specific agent instructions and development documentation in the cor
 
 ## Current phase
 
-This repository is at the architecture scaffold phase. Only health endpoints and a static Web shell are implemented. Do not infer that business endpoints in `contracts/` already exist. Do not implement M1, M2, M3, or D business features without a scoped task and acceptance criteria.
+This checkout includes the shared scaffold, M1 read-only Vue pages, and a first local M3 implementation with explicit development dependencies. M1 and D business providers are still unavailable; M2 branch work must be inspected separately before integration. Read each module's `STATUS.md` for implementation, verification, and deployment evidence. Do not infer that business endpoints in `contracts/` already exist or that local M3 substitute tests establish real integration. Do not implement M1, M2, M3, or D business features without a scoped task and acceptance criteria.
 
 ## Sources of truth
 

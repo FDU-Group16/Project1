@@ -1,6 +1,8 @@
 # 校园资源服务平台 · 工程骨架
 
-软件过程管理与工程伦理课程 Project 1。当前阶段只搭建协作与运行骨架，没有座位预约、整室审批、报修或公共层业务实现。
+软件过程管理与工程伦理课程 Project 1。公共工程骨架与 M1 只读界面已建立；本地 M3 分支新增了报修工单首轮实现。各模块的实现、验证、集成与发布范围见[模块状态索引](docs/module-status.md)，不将前端示例或开发替身视作真实业务集成。
+
+M3 本地演示从 [运行说明](services/m3/README.md) 开始：`bash services/m3/run-dev.sh` 启动后端，再启动 Web 并访问 `/m3`。包括报修、派单、维修、返工、验收、评价、超时升级及持久化写回；默认部署仍因 D 未接入而拒绝业务操作。
 
 ## 技术栈
 
@@ -29,7 +31,7 @@ Web 地址为 `http://localhost:8080`，四个 API 的 `/healthz` 地址为 `htt
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install 'fastapi>=0.158,<0.159' 'uvicorn>=0.30,<1'
+python -m pip install 'fastapi>=0.158,<0.159' 'uvicorn>=0.30,<1' 'sqlalchemy>=2.0,<2.1' 'psycopg[binary]>=3.2,<4'
 npm --prefix apps/web ci
 ```
 
@@ -43,7 +45,7 @@ python -m uvicorn services.m1.main:app --host 0.0.0.0 --port 3101
 npm --prefix apps/web run dev
 ```
 
-Web 开发服务地址为 `http://localhost:5173`。其余 API 入口为 `services.m2.main:app`、`services.m3.main:app`、`services.d.main:app`，可分别用端口 3102、3103、3104 启动。当前仅提供 `/healthz` 作为项目健康检查，不代表业务接口已经实现。
+Web 开发服务地址为 `http://localhost:5173`。其余 API 入口为 `services.m2.main:app`、`services.m3.main:app`、`services.d.main:app`，可分别用端口 3102、3103、3104 启动。`/healthz` 仅表示 HTTP 服务可响应；M3 业务的配置、公开接口和本地演示见 [M3 运行说明](services/m3/README.md)，不能从健康检查推断业务依赖已就绪。
 
 若已安装 uv，可用锁文件安装后端依赖，并用相同方式启动服务：
 
@@ -61,7 +63,7 @@ uv run uvicorn services.m1.main:app --host 0.0.0.0 --port 3101
 bash scripts/check.sh
 ```
 
-`scripts/check.sh` 会检查 OpenAPI 文件、四个 FastAPI 空壳的 HTTP 健康响应，以及 Vue 类型检查和构建；没有 uv 时使用 `.venv/bin/python`。pip 安装按 `pyproject.toml` 的版本范围解析依赖，不保证与 `uv.lock` 中的精确版本一致；需要精确复现依赖时使用 uv 或 Docker Compose。
+`scripts/check.sh` 会检查 OpenAPI 文件、M3 后端与前端行为、四个 FastAPI 服务的 HTTP 健康响应，以及 Vue 类型检查和构建；没有 uv 时使用 `.venv/bin/python`。pip 安装按 `pyproject.toml` 的版本范围解析依赖，不保证与 `uv.lock` 中的精确版本一致；需要精确复现依赖时使用 uv 或 Docker Compose。
 
 ## `develop` 测试环境部署
 
@@ -78,4 +80,4 @@ bash scripts/check.sh
 - [AI 开发任务模板](docs/ai-task-template.md)
 - [工程伦理议题记录](docs/ethics-log.md)
 
-`任务书.pdf` 由用户提供、目前未跟踪且未修改。业务代理（DSH 插件）是任务书附加项，本轮不搭建。
+`任务书.pdf` 由用户提供，已作为版本化需求参考保存，本轮未修改。业务代理（DSH 插件）是任务书附加项，本轮不搭建。

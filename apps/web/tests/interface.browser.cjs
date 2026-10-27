@@ -17,7 +17,9 @@ const checks = [];
     const businessRequests = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('request', request => {
-      if (/\/(api|internal)\//.test(new URL(request.url()).pathname)) businessRequests.push(request.url());
+      const pathname = new URL(request.url()).pathname;
+      // M3 may probe availability before any identity is selected.
+      if (/\/(api|internal)\//.test(pathname) && pathname !== '/api/m3/v1/context') businessRequests.push(request.url());
     });
     const visit = async target => {
       const response = await page.goto(new URL(target, base).href);
