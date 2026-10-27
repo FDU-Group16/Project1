@@ -101,3 +101,12 @@ B需评审：上述签名、租约过期回执处理、结果落盘与编排崩�
 `application_input_digest(ApplicationCreate)`重新校验JSON输入，对已规范化五字段按键排序、无额外空格、UTF-8序列化，以`m2.application-create.v1`加NUL作为域前缀计算SHA-256，返回`m2.application-create.v1:sha256:<hex>`。用途首尾空白和等价UTC小数秒表示被归一化；房间ID、用途内部空白和大小写保留。模型新增字段或规范化规则变化时，必须评估已存幂等记录兼容性并显式版本化，不能静默更改旧摘要。
 
 该函数不读写幂等记录，不鉴权、不作业务冲突决定、无HTTP 409/202回放。后续数据库仍须联合唯一约束、业务意图和结果同事务、失败回滚；B提出的审批初始化可信快照及资源回执持久领取/终结入口仍待单独共同评审。本批不修改这些签名或批准政策。摘要不构成匿名化，不输出实际申请内容或摘要到公共日志。
+
+
+## A0-05 已落实的事务接口（2026-10-27，本地已验证，待验收上传）
+
+用户确认同步风格，本批唯一实现为 `services.m2.db.Base`、`create_m2_engine(url)`、`create_session_factory(engine)` 与 `services.m2.uow.M2UnitOfWork(factory)`。其他 Port/业务 DTO 保持上述 proposed；公开 HTTP 契约版本不变。依赖尚未由 B 或全组维护者评审。
+
+UoW 遵循既有显式 commit 约定：enter 开启一次事务，session 属性只在活跃且未终结阶段可用；顶层 commit 后结束事务，异常/遗漏 commit 的退出回滚，最后永久关闭 Session；显式 rollback 同样终结本次事务。提交失败先 rollback 并继续抛出故障。每个 UoW 单次使用，禁止嵌套/复用，ports 只可使用/flush 共享 session。成功 commit 后发生的异常不能回滚已提交结果，因此顶层应把 commit 放在最后一步。网络 I/O 在事务外。
+
+M2 metadata 默认 schema=m2；连接工厂不联网、不加载 .env。Alembic head 为 `0001_m2_schema`，版本表限定 m2，未含申请表；B 后续模型必须继承同一 Base、迁移衔接唯一 parent。真实事务与迁移验证结果见 A0-05，不能以可导入替代数据库通过。

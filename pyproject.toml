@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Campus resource platform service scaffold"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.13,<2",
     "fastapi>=0.158,<0.159",
+    "psycopg[binary]>=3.2,<4",
+    "sqlalchemy>=2.0.22,<2.1",
     "uvicorn>=0.30,<1",
 ]
 

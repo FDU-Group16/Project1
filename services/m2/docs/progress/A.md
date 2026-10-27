@@ -65,3 +65,16 @@ A自动化的真实ID、时间、提示词、状态写入本地.git/m2-a/runtime
 ## 用户本轮补充边界（2026-10-22）
 
 A/B分支分别为feat/m2-applications、feat/m2-approvals；m2基线由用户与队友协调同步，代理只检查差异/提供步骤。审批政策继续待组内确认。用户同意按SQLAlchemy+Alembic+PostgreSQL准备，A共同基础/B按接口接入，使用独立测试库；同步风格/schema账号/共享依赖和配置的具体变更仍待确认。未授权操作共享数据库或推送/合并m2、develop、main。对接人暂待组内确认，协调清单见决策文件。此回复不是本批最终验收上传授权。
+
+
+## 2026-10-27 A0-05 本地实施
+
+用户回复“就按这个来”，批准本批技术/共享依赖/本机私有测试范围；上传须另验收授权。准确范围与验收见 [A0-05](../tasks/A0-05.md)，仍在原 A checkout 的 m2@13bb317667ebb1dc0f3fd5180e9e4c99ff89be3d，持本人运行锁编辑验证；A0-04已上传，不重做。
+
+重试 fetch 已确认 origin/m2 同 HEAD，origin/develop@99ce858是祖先；无快进/合并需要。共享依赖仅增加 SQLAlchemy、psycopg binary、Alembic与必要传递包，既有版本不升级；沿用 unittest。现有 Node 本轮复查为24.22.1，Python为3.12.14、uv0.10.0，不升级全局工具。
+
+本机私有集群拟放 `/Users/wuyufan/Documents/Codex/Project1-A/.git/m2-a/postgres18/data`，127.0.0.1:55432，m2_a_test库/m2 schema/同名业务账号；另用独立bootstrap管理员初始化。密码只放忽略配置并设0600，不提交或展示。安装预检需升级ca-certificates，用户明确“允许仅升级 ca-certificates”；已完成安装，实际既有包仅该证书包变化，其余为新依赖。PostgreSQL 18.6；未使用brew services。
+
+当前48项测试全部通过（含8项真实PG，无跳过）、一次性副本回滚故障注入有效、根check通过。状态READY_FOR_REVIEW，未stage/commit/push；不叠加新批次。初轮测试将inet地址转文本得到127.0.0.1/32，已改用PostgreSQL host()取地址再严格等值核对，未放宽隔离条件。
+
+数据库验收完成于2026-10-27 12:14（Asia/Shanghai）；私有集群/data及0600秘密配置保留在.git/m2-a/postgres18，本轮进程已停止，临时socket目录已移除。复验需先恢复socket目录（路径在该目录socket-path文件，0700权限）再pg_ctl启动该明确data；不重新initdb或执行provision覆盖已有集群。测试读取test-env.json中的专用环境变量（勿输出其内容），命令为`.venv/bin/python .git/m2-a/A0-05-verify.py`，结束只停止该data对应进程。最新本轮远端只读查询超时，不能以更早成功fetch冒充当前最新；上传前重新核实m2。

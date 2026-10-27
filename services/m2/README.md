@@ -83,3 +83,40 @@ PYCODE
 ```
 
 预期前三行均为True。当前M2单测共35项，命令仍为`python -m unittest discover -s services/m2/tests -p 'test_*.py' -v`。精确范围和验收见[A0-04任务](docs/tasks/A0-04.md)。摘要不是授权凭据；未来必须先鉴权再查幂等记录，作用域四字段须在业务事务内受数据库联合唯一约束保护。
+
+
+## A0-05 数据库基础（2026-10-27，本地已验证，待验收上传）
+
+技术选择已获本聊天用户确认：同步 SQLAlchemy 2.x + psycopg 3 binary + Alembic 1.x，依赖在根 pyproject.toml/uv.lock。安装使用 `uv sync --frozen`。不要再创建另一套 Base/Session 或迁移链。
+
+```python
+from services.m2.db import create_m2_engine, create_session_factory, database_url_from_env
+from services.m2.uow import M2UnitOfWork
+
+engine = create_m2_engine(database_url_from_env())
+factory = create_session_factory(engine)
+try:
+    with M2UnitOfWork(factory) as uow:
+        # 未来申请仓储和 B port 共用 uow.session，可 flush，不独立 commit。
+        # 在这里调用实际实现；当前尚无申请/审批仓储。
+        uow.commit()
+finally:
+    engine.dispose()
+```
+
+`M2_DATABASE_URL` 必须显式配置 `postgresql+psycopg`、主机、端口、库和账号密码；不读取通用 DATABASE_URL 或自动加载 .env。凭据只放忽略配置/秘密管理，勿写到终端历史或提交。引擎创建和模块导入不连接，首次用例才获取连接。UoW 显式提交；无 commit、异常或提交失败回滚。每个实例仅能使用一次，结束后禁止继续访问；已经成功 commit 的事务不能被之后的异常撤销。
+
+迁移（事先人工核对目标；以下命令会写指定数据库）：
+
+```sh
+uv run --frozen python -m alembic -c services/m2/alembic.ini upgrade head
+uv run --frozen python -m alembic -c services/m2/alembic.ini current
+```
+
+唯一 head 为 `0001_m2_schema`。schema 与版本表都在 m2；env 在同一事务先创建 namespace，revision 建立技术基点，不创建任何申请/审批表。禁止 Base.metadata.create_all 替代迁移。downgrade 到 base 保留 namespace/空版本表，不使用 CASCADE 删除未知表。未来 B 迁移须从此 head 协调接续；autogenerate 只检查 m2 namespace，生成结果仍需人工检查。
+
+无数据库的普通检查：`uv run --frozen python -m unittest discover -s services/m2/tests -v`。没有专用测试环境时 PostgreSQL 类会明确 SKIP/NOT_RUN，这不证明数据库通过。
+
+完整数据库验证需独立 PostgreSQL 18、回环 TCP、m2_a_test 库及同名非超级用户；从忽略配置设置 `M2_TEST_DATABASE_URL`、`M2_TEST_DATABASE_PORT` 和 `M2_TEST_DATABASE_CONFIRM=m2_a_test` 后执行同一命令。URL 禁止 query 参数，避免 host/service 重定向；测试先查询实际数据库/用户/地址/端口/权限/版本，再迁移和创建本轮随机探针表，结束只删除该表。角色不能有 SUPERUSER/CREATEDB/CREATEROLE。不要用共享库冒充这个目标，也不把这些约束视作通用生产配置。
+
+本机私有集群与复现配置位于 A 忽略的运行目录，机器路径详见个人 progress。本批已在 PostgreSQL 18.6 验证空库迁移、事务和隔离检查，48 项测试全部通过（8 项真实 PG、无跳过），回滚故障注入有效，测试服务已停止。申请保存查询、HTTP、B 审批、M1/D 集成和部署尚未实现。详情见 [A0-05](docs/tasks/A0-05.md)。
