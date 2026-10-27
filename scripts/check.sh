@@ -14,8 +14,15 @@ fi
 "${python_cmd[@]}" scripts/check-dependencies.py
 "${python_cmd[@]}" scripts/test-dependencies.py
 node scripts/check-contracts.mjs
+"${python_cmd[@]}" -m services.m3.export_contract --check
 "${python_cmd[@]}" -m compileall -q services
 "${python_cmd[@]}" scripts/smoke.py
-"${python_cmd[@]}" scripts/test-business.py
+if [[ "${BUSINESS_TEST_EXTERNAL:-0}" == "1" ]]; then
+  "${python_cmd[@]}" scripts/test-business.py --external
+else
+  "${python_cmd[@]}" scripts/test-business.py
+fi
+"${python_cmd[@]}" -m pytest services/m3/tests -q
+"${python_cmd[@]}" services/m3/tests/mutation_check.py
 npm --prefix apps/web run typecheck
 npm --prefix apps/web run build

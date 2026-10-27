@@ -1,0 +1,12 @@
+# M3 implementation rules
+
+Read root `AGENTS.md`, `docs/develop-integration.md`, `docs/dependencies.md`, and `../../contracts/m3-work-orders.md` before edits. `docs/implementation.md` is the original workspace's historical evidence, not this copy's validation. This directory owns M3 only; do not repair missing M1 or D providers by editing their internals or databases.
+
+- Actor identity comes from the directory provider, never request roles/user IDs. Production requires the real HTTP adapter, explicit identity/D-02/M1 configuration and a separate PostgreSQL database; missing configuration fails closed and remote failures never select demo data. Do not process development or unclassified legacy outbox data in production.
+- Keep the complete trusted permission set for multi-permission users; the public role is a presentation summary. D-02 rooms use the current user's bearer and provider-side resource scope, never M1's internal service credential. User bearer tokens remain in memory only. New D-01 repair permissions and roster remain a consumer proposal until provider review/implementation.
+- State, history, creation keys, and outbox writes commit atomically. Network I/O happens after a durable lease claim, outside database transactions. Retry identical source, revision, correlation ID and payload.
+- A validated M1 receipt is required before IN_PROGRESS/CLOSED. Completing or rejecting acceptance never releases a block. Do not weaken receipt checks to make a demonstration pass.
+- Keep all historical actual repair participants for acceptance checks; reassignment must immediately remove the former assignee's access and cannot extend an SLA.
+- Preserve ordered Alembic revisions. Never edit an applied revision or use `create_all`/manual SQL changes as a substitute for migrations. PostgreSQL tables and version tracking are scoped to `m3`.
+- Temporary dependencies are `dev_dependencies.py` and `seed.py` (M3-D-DEV), `dev_m1_stub.py` (M3-M1-DEV), and `run-dev.sh`; maintain precise source markers and `DEPENDENCIES.json`. Remove only after the integration task verifies real providers; preserve consumer logic, HTTP adapter, failure handling and behavioral tests. D-03/D-04 are owned by M3 but remain an explicit unimplemented dependency in this work-order integration task.
+- Run `.venv/bin/python -m pytest services/m3/tests -q`, then `bash scripts/check.sh`. Report SQLite, real PostgreSQL, consumer HTTP fixtures and actual M1/D verification separately. Keep STATUS evidence factual.

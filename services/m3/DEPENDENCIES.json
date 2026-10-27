@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "consumer": "M3",
+  "owner": "M3",
+  "status_file": "services/m3/STATUS.md",
+  "dependencies": [
+    {
+      "id": "M3-D-DEV",
+      "providers": ["D-01", "D-02"],
+      "status": "integrating",
+      "inventory": "services/m3/docs/dependencies.md",
+      "contract": {"path": "contracts/m3-directory-dependencies.md", "version": "0.1.0", "status": "proposed"},
+      "marker_paths": ["services/m3/dev_dependencies.py", "services/m3/seed.py"],
+      "verification": null
+    },
+    {
+      "id": "M3-M1-DEV",
+      "providers": ["M1-ROOM-BLOCKS"],
+      "status": "integrating",
+      "inventory": "services/m3/docs/dependencies.md",
+      "contract": {"path": "contracts/m1-room-blocks.openapi.json", "version": "0.2.0-proposed", "status": "proposed"},
+      "marker_paths": ["services/m3/dev_m1_stub.py"],
+      "verification": null
+    },
+    {
+      "id": "M3-D-DELIVERY",
+      "providers": ["D-03", "D-04"],
+      "status": "temporary",
+      "inventory": "services/m3/docs/dependencies.md",
+      "contract": {"path": "contracts/d-dependencies.md", "version": "0.1.0", "status": "proposed"},
+      "marker_paths": [],
+      "verification": null
+    }
+  ]
+}

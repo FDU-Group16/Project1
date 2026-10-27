@@ -39,3 +39,9 @@
 - `CONTRACT-ASSUMPTION WEB-D01-IDENTITY` 标注 `index.ts` 的 `restoreIdentity`、`login`、`logout` 真实 HTTP 消费接口，以及 `session.ts` 的 `Identity`/`Session` 字段假设。它们采用 [D 依赖提案 v0.1.0](../../../../../../contracts/d-dependencies.md)，可与 M2 协调路径、字段和会话语义；先更新契约并联调，保留客户端、权限/错误处理及会话清理，不能整块删除。
 
 构建通过不证明真实 D-01 可用。真实鉴权、通知送达与 D 审计仍需对应组集成。
+
+## 2026-10-27 M3 develop 适配补充
+
+M3 使用同一个公共会话与 HTTP 客户端。显式开发身份增加 `dev-repair-admin`（repair:dispatch、repair:report）、`dev-technician-1`/`dev-technician-2`（repair:work、repair:report），departmentId 均为 null；不授予 room:manage 或 operations:read。已有 seat:reserve 学生身份可报修。身份列表、前端选择器仍归 WEB-D01-IDENTITY 库存，新增 M3 消费登记 WEB-M3-D01。真实 D-01 交付时由 Web/M1/M3 与 M2 联合核验，再清理整个公共开发身份机制；本次未将拟议维修权限或人员目录当作已实现的 D 服务。
+
+共享请求增加 M3 地址与嵌套错误格式兼容；保留 M1/D Problem 错误，同时组合调用方取消、15 秒超时和身份版本检查。详细证据与未完成项见 [M3 集成记录](../../../../../../services/m3/docs/develop-integration.md)。

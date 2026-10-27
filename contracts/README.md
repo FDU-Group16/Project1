@@ -6,6 +6,13 @@ FastAPI 服务运行时生成的 OpenAPI 页面只描述当时已注册的路由
 
 实际实现、验证与发布范围见 [模块状态索引](../docs/module-status.md)及各提供方的 `STATUS.md`。接口提案获评审、代码实现、集成测试通过和部署可用分别记录；消费方在接入前必须确认提供方的实际状态。字段、错误、鉴权与调用示例以契约文件为准，避免在状态记录中维护互相矛盾的副本。
 
+## 2026-10-27 M3 develop 适配范围
+
+- [M3 工单契约](m3-work-orders.md)及[OpenAPI](m3-work-orders.openapi.json)：现有工单业务、HTTP 身份/目录装配与 `/api/m3/v1` 路径。
+- [M3 身份和人员目录消费提案](m3-directory-dependencies.md)：权限映射与维修人员目录；D-01 尚未提供，必须由 M2/D-01 与公共 Web 维护者评审。
+- M1 写回与 D-02 房间沿用本目录现有契约；本次不改其业务实现。具体真实 HTTP/PostgreSQL 验证及身份替身边界见 [M3 适配记录](../services/m3/docs/develop-integration.md)。
+- 本次未推送、未合并 develop、未部署；同域代理配置不代表线上已经可用。
+
 ## 2026-10-22 M1 / D-02 实施范围
 
 - D-02 主数据：[`d-master-data.openapi.json`](d-master-data.openapi.json) 与 [行为说明](d-master-data.md)，v0.1.0（proposed）。

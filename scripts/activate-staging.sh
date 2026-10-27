@@ -45,7 +45,10 @@ healthy() {
   if [[ "$web_address" == 0.0.0.0:* ]]; then
     web_address="127.0.0.1:${web_address##*:}"
   fi
-  curl --fail --silent --max-time 3 "http://${web_address}/" >/dev/null
+  curl --fail --silent --max-time 3 "http://${web_address}/" >/dev/null || return 1
+  if [[ -f "$source_dir/services/m3/export_contract.py" ]]; then
+    curl --fail --silent --max-time 3 "http://${web_address}/api/m3/v1/context" >/dev/null || return 1
+  fi
 }
 
 if [[ "${2:-}" == "--check" ]]; then

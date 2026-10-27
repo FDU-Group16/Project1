@@ -31,6 +31,13 @@ services:
     environment:
       APP_MODULE: "services.m1.main:app"
       PORT: "3101"
+      APP_ENV: "production"
+      M1_DATABASE_URL: ${M1_DATABASE_URL:-}
+      D_BASE_URL: "http://d-api:3104"
+      D_M1_TOKEN: ${D_M1_TOKEN:-}
+      M1_M2_TOKEN: ${M1_M2_TOKEN:-}
+      M1_M3_TOKEN: ${M3_M1_TOKEN:-}
+      M1_CHECKIN_SECRET: ${M1_CHECKIN_SECRET:-}
     ports:
       - "127.0.0.1:3101:3101"
 
@@ -49,6 +56,13 @@ services:
     environment:
       APP_MODULE: "services.m3.main:app"
       PORT: "3103"
+      M3_MODE: "production"
+      M3_DIRECTORY_MODE: "http"
+      M3_DATABASE_URL: ${M3_DATABASE_URL:-}
+      M3_IDENTITY_BASE_URL: ${D_IDENTITY_URL:-http://d-api:3104}
+      D_BASE_URL: "http://d-api:3104"
+      M3_M1_BASE_URL: "http://m1-api:3101"
+      M3_M1_TOKEN: ${M3_M1_TOKEN:-}
     ports:
       - "127.0.0.1:3103:3103"
 
@@ -58,10 +72,21 @@ services:
     environment:
       APP_MODULE: "services.d.main:app"
       PORT: "3104"
+      APP_ENV: "production"
+      D_DATABASE_URL: ${D_DATABASE_URL:-}
+      D_IDENTITY_URL: ${D_IDENTITY_URL:-http://d-api:3104}
+      D_M1_TOKEN: ${D_M1_TOKEN:-}
     ports:
       - "127.0.0.1:3104:3104"
 
   web:
+    depends_on:
+      m1-api:
+        condition: service_started
+      d-api:
+        condition: service_started
+      m3-api:
+        condition: service_started
     build:
       context: .
       dockerfile: docker/web.Dockerfile

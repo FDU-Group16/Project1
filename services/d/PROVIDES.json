@@ -36,6 +36,21 @@
         "status": "proposed"
       },
       "implementation": null
+    },
+    {
+      "id": "D-02",
+      "owner": "M1",
+      "status": "integration_ready",
+      "status_file": "services/d/STATUS.md",
+      "contract": {
+        "path": "contracts/d-master-data.openapi.json",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "implementation": {
+        "revision": "13dcd59f9a46c859f8593b530d7aa54c27faaf1f",
+        "evidence": "services/d/tasks/2026-10-22-d02.md"
+      }
     }
   ]
 }

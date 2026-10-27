@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "id": "M1-ROOM-BLOCKS",
+      "owner": "M1",
+      "status": "integration_ready",
+      "status_file": "services/m1/STATUS.md",
+      "contract": {
+        "path": "contracts/m1-room-blocks.openapi.json",
+        "version": "0.2.0",
+        "status": "proposed"
+      },
+      "implementation": {
+        "revision": "13dcd59f9a46c859f8593b530d7aa54c27faaf1f",
+        "evidence": "services/m1/tasks/2026-10-22-backend-verification.md"
+      }
+    }
+  ]
+}

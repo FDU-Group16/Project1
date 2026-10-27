@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "consumer": "Web M1/D-02",
-  "owner": "Web/M1",
+  "consumer": "Web M1/D-02/M3",
+  "owner": "Web/M1/M3",
   "status_file": "apps/web/STATUS.md",
   "dependencies": [
     {
