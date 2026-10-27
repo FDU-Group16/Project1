@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "consumer": "Web M3",
+  "owner": "M3",
+  "status_file": "apps/web/src/modules/m3/STATUS.md",
+  "dependencies": [
+    {
+      "id": "WEB-M3-D01",
+      "providers": ["D-01"],
+      "status": "integrating",
+      "inventory": "apps/web/src/modules/m3/README.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "marker_paths": [],
+      "verification": null
+    }
+  ]
+}

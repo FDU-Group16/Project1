@@ -1,0 +1,60 @@
+2026-10-27 M3 develop integration verification
+Base: 13dcd59f9a46c859f8593b530d7aa54c27faaf1f; uncommitted integration worktree
+Local: Python 3.12.14, Node 24, PostgreSQL 16.2; PostgreSQL18 CI not executed locally
+Root command: BUSINESS_TEST_EXTERNAL=1 bash scripts/check.sh; exit 0
+
+登记校验：5 个提供能力，8 项消费依赖，0 个错误。文件存在不代表真实联调已通过。
+Ran 24 tests in 1.731s
+M3 contract matches request models and documented response schemas
+PASS real D-02 -> M1 HTTP: CRUD, department/owner scope, replay, concurrent booking, multi-source writeback, schema isolation and provider outage. Identity remains a development substitute.
+Ran 14 tests in 2.868s
+Ran 30 tests in 1.303s
+PASS mutation: breaking authorized_room fails test_m101_department_filter_and_direct_booking_denial; restoring it passes.
+PASS mutation: breaking ensure_no_conflict fails test_m103_concurrent_seat_and_user_conflicts; restoring it passes.
+PASS real M3 -> M1 -> D-02 HTTP/PostgreSQL: scoped rooms, whole-room repair block, acceptance hold, two M3 sources, M2 and reservation preservation, stale-write tombstones, schema credentials and provider outage. D-01 uses an explicitly synthetic HTTP fixture; M1 identity/delivery remain explicit development substitutes.
+83 passed, 1 warning in 2.85s
+83 passed, 1 warning in 2.33s
+PASS: 3 baseline tests passed; 3/3 targeted mutations killed; checkout source unchanged.
+
+Separate scripts/test-staging-images.py: 9 tests, OK
+Browser command: python services/m3/tests/browser_real_providers.py --port 5174; exit 0
+Browser acceptance at http://127.0.0.1:5174: real M3/M1/D-02 with synthetic shared/D-01 test identities.
+Running services/m3/tests/browser-flow.cjs
+{
+  "passed": true,
+  "checks": [
+    "shared login/return destination/logout",
+    "no module identity selector",
+    "real report/assign/start/complete",
+    "rejection/rework",
+    "admin acceptance reason",
+    "HTTP ACK and close",
+    "one-time rating/reload",
+    "identity isolation",
+    "1440/768/375/320 layouts",
+    "M1/M2 routes",
+    "keyboard focus"
+  ],
+  "detailUrl": "http://127.0.0.1:5174/m3/work-orders/cd027e8d-14ee-4ca3-93cc-25f4cf02e62f"
+}
+Running apps/web/tests/business.browser.cjs
+PASS D-02 create/update room and seat through real API
+PASS M1 search, reserve, cancel and rebook through real API
+PASS identity switch clears private details; student cannot manage rooms
+PASS actual statistics, provenance and daily code display
+PASS D-02 permanent retirement with history retained
+PASS all local business browser flows; JavaScript errors: 0. Identity/notification/audit providers remain substitutes.
+Running apps/web/tests/shared-client.browser.cjs
+{
+  "base": "http://127.0.0.1:5174",
+  "checks": [
+    "M1 Problem+JSON preserves status/code/detail without clearing login",
+    "M3 nested error preserves status/code/message",
+    "Current-session 401 clears shared memory/storage and records the expiry notice",
+    "Caller AbortSignal cancels Fetch promptly without clearing login",
+    "Identity switch rejects late success and late 401 while preserving the new session",
+    "M2 entry remains available after shared-session changes and refresh"
+  ],
+  "errors": []
+}
+PASS real-provider browser checks: M3 workflow/shared login/identity isolation/M1 and M2 routes; M1 reservations and D-02 management; shared-client regression. Real D-01 remains unverified.

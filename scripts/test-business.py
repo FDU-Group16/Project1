@@ -30,11 +30,11 @@ def main():
     container = None
     try:
         if args.external:
-            for service in ('M1', 'D'):
+            for service in ('M1', 'D', 'M3'):
                 env[f'{service}_DATABASE_URL'] = env[f'TEST_{service}_DATABASE_URL']
         else:
             container = 'project1-check-' + secrets.token_hex(6)
-            secret, m1_password, d_password = [secrets.token_hex(24) for _ in range(3)]
+            secret, m1_password, d_password, m3_password = [secrets.token_hex(24) for _ in range(4)]
             docker('run', '--rm', '-d', '--name', container, '-e', f'POSTGRES_PASSWORD={secret}',
                    '-e', 'POSTGRES_DB=campus_test', '-p', '127.0.0.1::5432', 'postgres:18-alpine')
             for _ in range(100):
@@ -46,8 +46,8 @@ def main():
                 raise RuntimeError('PostgreSQL did not become ready')
             port = docker('port', container, '5432/tcp').split(':')[-1]
             env.update(DATABASE_ADMIN_URL=f'postgresql://postgres:{secret}@127.0.0.1:{port}/campus_test',
-                       M1_DATABASE_PASSWORD=m1_password, D_DATABASE_PASSWORD=d_password)
-            for service, password in (('M1', m1_password), ('D', d_password)):
+                       M1_DATABASE_PASSWORD=m1_password, D_DATABASE_PASSWORD=d_password, M3_DATABASE_PASSWORD=m3_password)
+            for service, password in (('M1', m1_password), ('D', d_password), ('M3', m3_password)):
                 url = f'postgresql://campus_{service.lower()}:{password}@127.0.0.1:{port}/campus_test'
                 env[f'{service}_DATABASE_URL'] = env[f'TEST_{service}_DATABASE_URL'] = url
             subprocess.run([sys.executable, 'scripts/provision-databases.py'], cwd=ROOT, env=env, check=True)
@@ -63,6 +63,11 @@ def main():
                 raise RuntimeError(f'No behavior tests found for {service}')
             subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', str(suite), '-v'], cwd=ROOT, env=env, check=True)
         subprocess.run([sys.executable, 'scripts/test-mutations.py'], cwd=ROOT, env=env, check=True)
+        # The dedicated schemas are tested sequentially; M3 fixtures clear only
+        # their own disposable test rows. No consumer writes another schema.
+        env.update(M3_TEST_DATABASE_URL=env['TEST_M3_DATABASE_URL'], M3_REQUIRE_POSTGRES='1', M3_REQUIRE_SCHEMA_OWNER='1', M3_TEST_ALLOW_RESET='1')
+        subprocess.run([sys.executable, 'services/m3/tests/integration_real_providers.py'], cwd=ROOT, env=env, check=True)
+        subprocess.run([sys.executable, '-m', 'pytest', 'services/m3/tests', '-q'], cwd=ROOT, env=env, check=True)
     finally:
         if container:
             subprocess.run(['docker', 'rm', '-f', container], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

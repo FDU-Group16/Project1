@@ -11,6 +11,7 @@ ENV UV_LINK_MODE=copy \
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY services ./services
+COPY scripts/start-api.sh ./start-api.sh
 
 ENV PATH="/workspace/.venv/bin:$PATH"
-CMD ["sh", "-c", "exec uvicorn \"$APP_MODULE\" --host 0.0.0.0 --port \"$PORT\""]
+CMD ["sh", "/workspace/start-api.sh"]

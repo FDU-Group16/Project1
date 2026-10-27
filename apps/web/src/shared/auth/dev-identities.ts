@@ -8,4 +8,7 @@ export const devIdentities: Array<{ token: string; user: Identity }> = [
   { token: 'dev-student-ee', user: { id: 'dev-student-ee', displayName: '开发学生 · 电子', departmentId: 'ee', permissions: ['seat:reserve'] } },
   { token: 'dev-room-admin', user: { id: 'dev-room-admin', displayName: '开发空间管理员', departmentId: null, permissions: ['room:manage'] } },
   { token: 'dev-operator', user: { id: 'dev-operator', displayName: '开发运维人员', departmentId: null, permissions: ['operations:read'] } },
+  { token: 'dev-repair-admin', user: { id: 'dev-repair-admin', displayName: '开发报修管理员', departmentId: null, permissions: ['repair:dispatch', 'repair:report'] } },
+  { token: 'dev-technician-1', user: { id: 'dev-technician-1', displayName: '开发维修员一', departmentId: null, permissions: ['repair:work', 'repair:report'] } },
+  { token: 'dev-technician-2', user: { id: 'dev-technician-2', displayName: '开发维修员二', departmentId: null, permissions: ['repair:work', 'repair:report'] } },
 ];
