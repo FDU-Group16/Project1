@@ -12,6 +12,8 @@ from services.m1.masterdata import validate_room, validate_rooms
 
 
 def dependency_mode():
+    # TEMPORARY-DEPENDENCY M1-D-IDENTITY / M1-D-DELIVERY：显式开发开关。
+    # 随对应替身按 temporary_dependencies/README.md 清理；保留默认真实请求和失败拒绝行为。
     enabled = os.getenv('M1_USE_DEV_DEPENDENCIES') == '1'
     if enabled and os.getenv('APP_ENV') not in {'development', 'test'}:
         raise Problem(503, 'INVALID_DEPENDENCY_MODE', 'Development adapters require APP_ENV=development or test.')
@@ -51,9 +53,13 @@ def identity(authorization: str | None = Header(default=None)):
     if not authorization or not authorization.startswith('Bearer ') or not authorization[7:]:
         raise Problem(401, 'UNAUTHORIZED', 'A bearer token is required.')
     token = authorization[7:]
+    # TEMPORARY-DEPENDENCY M1-D-IDENTITY：M1 消费 M2/D-01 的临时分支。
+    # M1/M2 可协调修改或替换此分支；真实身份联调通过后按清单移除，保留下方客户端与权限校验。
     if dependency_mode() == 'development-substitutes':
         from services.m1.temporary_dependencies.adapters import development_identity
         return development_identity(token)
+    # CONTRACT-ASSUMPTION M1-D-IDENTITY：路径/响应形状来自 contracts/d-dependencies.md v0.1.0 proposed。
+    # M2 与 M1 可按真实 D-01 契约协调修改；这里是应保留的真实客户端，不是待删除的模拟实现。
     result = request_d('/api/v1/auth/me', token)
     if (not isinstance(result.get('id'), str) or not result['id'] or 'departmentId' not in result
             or (result['departmentId'] is not None and not isinstance(result['departmentId'], str))
@@ -96,10 +102,14 @@ def service_identity(source, authorization):
 
 
 def deliver(kind, payload):
+    # TEMPORARY-DEPENDENCY M1-D-DELIVERY：M1 消费 M3/D-03/D-04 的临时分支。
+    # 可由 M1/M3 协调修改或替换；真实投递/审计联调后按清单清理，保留发件箱、调度及重试业务。
     if dependency_mode() == 'development-substitutes':
         from services.m1.temporary_dependencies.adapters import development_deliver
         development_deliver(kind, payload)
         return 'SIMULATED'
+    # CONTRACT-ASSUMPTION M1-D-DELIVERY：路径和接收回执按 contracts/d-dependencies.md v0.1.0 proposed。
+    # M3 与 M1 可协调修改接口映射；保留真实 HTTP、回执校验，以及“已接收不等于已送达”的处理。
     path = '/internal/v1/notifications' if kind == 'notification' else '/internal/v1/audit'
     key = 'D_NOTIFICATION_TOKEN' if kind == 'notification' else 'D_AUDIT_TOKEN'
     result = request_d(path, os.getenv(key), payload)

@@ -24,6 +24,7 @@ class Identity:
 
 
 def identity_mode() -> str:
+    # TEMPORARY-DEPENDENCY D02-IDENTITY：仅开发激活，按 development/README.md 随替身清理。
     if os.getenv("D_USE_DEV_IDENTITY") == "1":
         if os.getenv("APP_ENV") not in {"development", "test"}:
             raise Problem(503, "INVALID_DEPENDENCY_MODE", "Development identity is forbidden in this environment")
@@ -56,6 +57,8 @@ class NoIdentityRedirect(HTTPRedirectHandler):
 
 def current_identity(authorization: str | None = Header(default=None)) -> Identity:
     token = bearer(authorization)
+    # TEMPORARY-DEPENDENCY D02-IDENTITY：M1/D-02 消费 M2/D-01 的临时接入点。
+    # M1/M2 可协调修改或替换；真实联调后按清单移除此分支，保留下方客户端与 D-02 权限校验。
     if identity_mode() == "development-substitute":
         from services.d.development.identity import identify
         value = identify(token)
@@ -67,6 +70,8 @@ def current_identity(authorization: str | None = Header(default=None)) -> Identi
         raise Problem(503, "IDENTITY_NOT_CONFIGURED", "Identity provider is not configured")
     if not base.startswith(("https://", "http://")):
         raise Problem(503, "IDENTITY_NOT_CONFIGURED", "Identity provider URL is invalid")
+    # CONTRACT-ASSUMPTION D02-IDENTITY：路径/身份形状来自 contracts/d-dependencies.md v0.1.0 proposed。
+    # 可由 M2/M1 按真实 D-01 契约协调修改；保留真实请求、parse_identity 和超时/拒绝处理。
     request = Request(base + "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
     try:
         with build_opener(NoIdentityRedirect()).open(request, timeout=5) as response:

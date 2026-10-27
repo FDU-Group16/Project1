@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import AppIcon from '../components/AppIcon.vue';
+// TEMPORARY-DEPENDENCY WEB-D01-IDENTITY：下方 auth.session.synthetic 横幅标识 Web M1/D-02 对 D-01（M2 组）的开发身份替身。
+// 可在提供/消费组集成范围内修改或移除该横幅及专用样式；保留真实身份展示和公共布局，见 ../auth/docs/auth-integration.md。
 import { auth } from '../auth';
 type NavigationItem = { label: string; to: string; icon?: string };
 withDefaults(defineProps<{

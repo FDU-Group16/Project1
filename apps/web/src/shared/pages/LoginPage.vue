@@ -6,6 +6,8 @@ import { auth, login, devIdentityEnabled, devIdentities, selectDevIdentity, logo
 import { errorMessage } from '../api/client';
 const route = useRoute(); const router = useRouter();
 const account = ref(''); const password = ref(''); const busy = ref(false); const error = ref('');
+// TEMPORARY-DEPENDENCY WEB-D01-IDENTITY：Web M1/D-02 使用的 D-01（M2 组）开发身份选项及下方开发表单，可在集成范围内修改/替换。
+// 清单见 ../auth/docs/auth-integration.md；真实联调后清理开发入口，保留真实登录、错误提示与退出处理。
 const selectedIdentity = ref(devIdentities[0]?.token ?? '');
 const returnTo = computed(() => {
   const candidate = route.query.redirect;
@@ -19,6 +21,7 @@ async function submit() {
   catch (cause) { error.value = errorMessage(cause); password.value = ''; }
   finally { busy.value = false; }
 }
+// TEMPORARY-DEPENDENCY WEB-D01-IDENTITY：此函数仅连接开发身份选择表单，随对应临时入口协调替换。
 async function enterDevelopment() { selectDevIdentity(selectedIdentity.value); await router.replace(returnTo.value); }
 async function exit() { try { await logout(); } catch { error.value = '本机登录状态已清除；服务端退出请求未成功，请在身份服务恢复后确认。'; } }
 </script>

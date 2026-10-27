@@ -1,4 +1,9 @@
-"""TEMPORARY-DEPENDENCY M1-D01, M1-D03, M1-D04: explicit synthetic development of M1 + D-02; no real D-01/03/04 providers.
+"""TEMPORARY-DEPENDENCY M1-D-IDENTITY / M1-D-DELIVERY / D02-IDENTITY / WEB-D01-IDENTITY.
+
+M1 维护的显式开发启动配置；D-01 由 M2 负责，D-03/D-04 由 M3 负责。
+可由对应组与 M1/Web 维护者在集成任务中修改或替换，真实联调通过后按 README.md
+及 D-02/Web 清单清理；保留正式迁移、种子和服务/调度入口，不自动删除已有数据库。
+此入口不实现真实 D-01/03/04。
 
 Requires Docker, installed Python dependencies and npm dependencies. Creates a
 persistent local PostgreSQL container and ignored random-credential config.
@@ -58,6 +63,8 @@ def main():
         raise RuntimeError('PostgreSQL readiness timed out')
     port = subprocess.check_output(['docker', 'port', container, '5432/tcp'], text=True).strip().split(':')[-1]
     env = os.environ.copy()
+    # TEMPORARY-DEPENDENCY M1-D-IDENTITY / M1-D-DELIVERY / D02-IDENTITY / WEB-D01-IDENTITY：
+    # 仅此显式演示入口开启替身；替换时协调删除开关，保留数据库/服务的正常配置与已有数据。
     env.update(APP_ENV='development', M1_USE_DEV_DEPENDENCIES='1', D_USE_DEV_IDENTITY='1',
                VITE_USE_DEV_IDENTITY='true', D_BASE_URL='http://127.0.0.1:3104', D_M1_TOKEN=config['service'],
                M1_M2_TOKEN=config['m2'], M1_M3_TOKEN=config['m3'], M1_CHECKIN_SECRET=config['checkin'],

@@ -1,4 +1,6 @@
-// TEMPORARY-DEPENDENCY WEB-D01-IDENTITY: explicit local development only. See docs/auth-integration.md.
+// TEMPORARY-DEPENDENCY WEB-D01-IDENTITY：Web M1/D-02 消费 D-01（M2 组）的合成身份替身，仅显式开发模式启用。
+// M2 提供方与 Web/M1/D-02 消费方可在集成任务范围内修改或替换此文件；真实联调通过后按清单移除。
+// 保留真实身份客户端、会话清理与业务代码；精确范围见 docs/auth-integration.md。
 import type { Identity } from './session';
 export const devIdentityEnabled = import.meta.env.DEV && import.meta.env.VITE_USE_DEV_IDENTITY === 'true';
 export const devIdentities: Array<{ token: string; user: Identity }> = [
