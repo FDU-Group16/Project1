@@ -16,6 +16,10 @@
 | M2 前端 | [modules/m2/STATUS.md](../apps/web/src/modules/m2/STATUS.md) | M2 页面、路由及与 M2 后端的接入情况 |
 | M3 前端 | [modules/m3/STATUS.md](../apps/web/src/modules/m3/STATUS.md) | M3 页面、路由及与 M3 后端的接入情况 |
 
+## 临时依赖与集成交接入口
+
+按[依赖交接流程](temporary-dependency-handoff.md)运行 `python3 scripts/check-dependencies.py` 查看汇总，或使用 `--provider D-01` / `--provider-owner M3` 查找受影响消费者。状态来自各模块自己的 `DEPENDENCIES.json` 和提供方 `PROVIDES.json`；本索引不保存进度副本。
+
 ## 接口与需求的权威入口
 
 - [接口契约登记](../contracts/README.md)：查看契约状态、版本与兼容性；接口字段、鉴权、错误和示例写在相应契约中。

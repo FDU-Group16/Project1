@@ -18,6 +18,8 @@
 
 ## TEMPORARY-DEPENDENCY WEB-D01-IDENTITY
 
+2026-10-27：本清单已接入 [DEPENDENCIES.json](../DEPENDENCIES.json)。M2 可按 D-01 查询此 Web 接入缺口；Web/M1 在真实验证、清理后更新消费记录，步骤见[交接指南](../../../../../../docs/temporary-dependency-handoff.md)。本次仅补充登记，真实 D-01 仍未联调。
+
 | 项 | 记录 |
 | --- | --- |
 | 消费方/提供方 | Web M1/D-02 → D-01（M2 组）；真实提供方仍未集成 |

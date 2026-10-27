@@ -40,6 +40,7 @@ Vue Router 锁定为 `4.6.4`，没有新增状态管理或 UI 组件库。公共
 
 ## 依赖与待办
 
+- 公共身份 [DEPENDENCIES.json](src/shared/auth/DEPENDENCIES.json) 登记 `WEB-D01-IDENTITY`。M2 交付 D-01 时可用 `python3 scripts/check-dependencies.py --provider D-01` 查出此 Web 接入缺口；Web/M1 维护消费记录，真实身份验收与临时内容清理分开记录，见[交接指南](../../docs/temporary-dependency-handoff.md)。
 - M1 业务后端和 D-02 主数据接口已经在当前任务实现；真实 PostgreSQL/HTTP 验证见 [M1](../../services/m1/STATUS.md)、[D](../../services/d/STATUS.md)。公共与业务消费字段以 [契约登记](../../contracts/README.md) 为准；提案仍需受影响组评审。
 - D-01 真实身份、D-03 通知、D-04 审计提供方不在用户本次授权范围；Web 仅实现身份消费，正常模式依赖真实服务。明确的开发身份库存见 [WEB-D01-IDENTITY](src/shared/auth/docs/auth-integration.md)，不会因真实服务失败自动启用。
 - 真实API页面验收已通过，见[业务浏览器脚本](tests/business.browser.cjs)与[主任务](../../services/m1/tasks/2026-10-22-completion.md)；D-01 可用后还需真实登录、恢复、过期、退出、权限和并发旧请求检查，然后按库存移除临时依赖。
@@ -49,6 +50,7 @@ Vue Router 锁定为 `4.6.4`，没有新增状态管理或 UI 组件库。公共
 
 ## 最近交接
 
+- 2026-10-27：增加公共身份临时依赖登记及源码标记检查，关联 E-07 与 D-01 接入；本轮没有更改页面、身份逻辑或配置。根检查与工程交接见[依赖交接任务](../../docs/tasks/2026-10-27-dependency-handoff.md)，真实 D-01 联调仍待完成。
 - 2026-10-27：补齐 WEB-D01-IDENTITY 临时数据/恢复/选择/退出分支、登录页/横幅及配置注释，真实身份客户端与会话字段标注可协调的接口假设；模板、样式、执行逻辑和配置值不变。Web 维护者及 M1/D-02 消费组与 M2/D-01 提供组按清单协作，范围与验证见[注释优化任务](../../services/m1/tasks/2026-10-27-temporary-interface-comments.md)。
 - 2026-10-27：按用户授权将 `m1@0b37222` 快进合入本地 `develop`，整合原有一键启动脚本及四份文档，保留实时业务说明与显式演示入口；关联 M1-01～08、D-02、E-01/E-07/E-08。验证、提交/推送及部署边界见[集成记录](../../docs/tasks/2026-10-27-m1-develop-integration.md)。
 

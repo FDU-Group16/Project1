@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "consumer": "Web M1/D-02",
+  "owner": "Web/M1",
+  "status_file": "apps/web/STATUS.md",
+  "dependencies": [
+    {
+      "id": "WEB-D01-IDENTITY",
+      "providers": [
+        "D-01"
+      ],
+      "status": "temporary",
+      "inventory": "apps/web/src/shared/auth/docs/auth-integration.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "marker_paths": [
+        "apps/web/.env.example",
+        "apps/web/src/shared/auth/dev-identities.ts",
+        "apps/web/src/shared/auth/index.ts",
+        "apps/web/src/shared/auth/session.ts",
+        "apps/web/src/shared/pages/LoginPage.vue",
+        "apps/web/src/shared/layouts/AppLayout.vue",
+        "services/m1/temporary_dependencies/run_demo.py"
+      ],
+      "verification": null
+    }
+  ]
+}

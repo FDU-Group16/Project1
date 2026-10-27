@@ -11,6 +11,10 @@ Development API responses expose `X-Dependency-Mode: development-substitutes`; r
 
 Cleanup scope after successful real integration: remove the two development functions and directory, the conditional imports in `dependencies.py`, `M1_USE_DEV_DEPENDENCIES` / `M1_DEV_DELIVERY_FAIL` development activation, synthetic identity tokens and fixture setup from runtime/demo documentation. Adapt (do not delete) lasting behavioral tests to inject a provider double with the real contract. Keep reservation/search/check-in/history/statistics logic, PostgreSQL migrations, scheduler, outbox, HTTP adapters, provenance, authorization/error handling and lasting behavioral tests. Run both real-provider integration checks and `bash scripts/check.sh` before documenting removal. These markers do not authorize deleting provider code or overriding working-tree changes.
 
+## 提供方完成后的交接入口
+
+[DEPENDENCIES.json](../DEPENDENCIES.json) 登记本清单两项依赖及所有源码标记路径。M2/M3 可按 D-01 或 D-03/D-04 查询受影响消费者，M1 在真实验证、清理后更新消费记录；命令和证据要求见[交接指南](../../../docs/temporary-dependency-handoff.md)。登记校验不代表真实接口验收。
+
 ## 显式开发启动器
 
 `services/m1/temporary_dependencies/run_demo.py` 是同一消费方的临时启动配置：显式设置 APP_ENV=development、M1_USE_DEV_DEPENDENCIES=1、D_USE_DEV_IDENTITY=1 和 VITE_USE_DEV_IDENTITY=true，使用合成种子与本机 PostgreSQL；不会修改其他模块或启动生产部署。忽略文件 `.env.m1-development.json` 仅存本机随机凭据，数据库容器由脚本命名并持久保留。真实 D-01/03/04 接入后此启动器、上述开关与合成选择入口均在替换清单内；保留数据库迁移、标准服务/调度入口、真实适配和长期行为测试。

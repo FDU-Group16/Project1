@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "consumer": "D-02",
+  "owner": "M1",
+  "status_file": "services/d/STATUS.md",
+  "dependencies": [
+    {
+      "id": "D02-IDENTITY",
+      "providers": [
+        "D-01"
+      ],
+      "status": "temporary",
+      "inventory": "services/d/tasks/2026-10-22-d02.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "marker_paths": [
+        "services/d/dependencies.py",
+        "services/d/development/__init__.py",
+        "services/d/development/identity.py",
+        "services/m1/temporary_dependencies/run_demo.py"
+      ],
+      "verification": null
+    }
+  ]
+}

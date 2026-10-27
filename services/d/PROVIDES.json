@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "id": "D-01",
+      "owner": "M2",
+      "status": "not_ready",
+      "status_file": "services/d/STATUS.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "implementation": null
+    },
+    {
+      "id": "D-03",
+      "owner": "M3",
+      "status": "not_ready",
+      "status_file": "services/d/STATUS.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "implementation": null
+    },
+    {
+      "id": "D-04",
+      "owner": "M3",
+      "status": "not_ready",
+      "status_file": "services/d/STATUS.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "implementation": null
+    }
+  ]
+}

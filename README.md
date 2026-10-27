@@ -92,6 +92,16 @@ bash scripts/check.sh
 
 `scripts/check.sh` 检查 OpenAPI、四服务 HTTP 健康响应、隔离 PostgreSQL 上的 M1/D-02 业务及跨服务行为、关键行为变异、Vue 类型和构建。需启动 Docker；测试容器结束后自动移除。没有 uv 时使用 `.venv/bin/python`，并先执行 `.venv/bin/python -m pip install 'httpx>=0.28,<1'` 安装测试依赖。pip 安装按版本范围解析依赖，不保证与 `uv.lock` 一致；精确复现请使用 uv。
 
+## 查询尚未完成的依赖接入
+
+```bash
+python3 scripts/check-dependencies.py
+python3 scripts/check-dependencies.py --provider D-01
+python3 scripts/check-dependencies.py --provider D-01 --require-complete
+```
+
+默认检查会列出提供方状态、消费者和待办，并校验登记与源码标记；最后一条用于指定范围的集成验收，仍待接入或清理时返回失败。提供方交付后更新自己的记录，消费方验证并清理后更新自己的记录；具体操作见[依赖交接流程](docs/temporary-dependency-handoff.md)。根检查已包含一致性检查，允许已登记的正常并行开发待办。
+
 ## `develop` 测试环境部署
 
 `develop` 测试部署工作流将检查通过的代码部署到 Linux 服务器并执行健康检查，配置与故障排查见 [测试环境部署](docs/deployment-staging.md)。既有静态界面部署证据见 [Web 交接](apps/web/STATUS.md)；本次 M1/D-02 合入与推送见[集成记录](docs/tasks/2026-10-27-m1-develop-integration.md)；新业务部署可用性仍未验证，发布前需配置独立数据库、真实身份/通知/审计提供方和调度进程并完成联调。

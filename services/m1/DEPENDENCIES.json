@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "consumer": "M1",
+  "owner": "M1",
+  "status_file": "services/m1/STATUS.md",
+  "dependencies": [
+    {
+      "id": "M1-D-IDENTITY",
+      "providers": [
+        "D-01"
+      ],
+      "status": "temporary",
+      "inventory": "services/m1/temporary_dependencies/README.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "marker_paths": [
+        "services/m1/dependencies.py",
+        "services/m1/temporary_dependencies/adapters.py",
+        "services/m1/temporary_dependencies/run_demo.py"
+      ],
+      "verification": null
+    },
+    {
+      "id": "M1-D-DELIVERY",
+      "providers": [
+        "D-03",
+        "D-04"
+      ],
+      "status": "temporary",
+      "inventory": "services/m1/temporary_dependencies/README.md",
+      "contract": {
+        "path": "contracts/d-dependencies.md",
+        "version": "0.1.0",
+        "status": "proposed"
+      },
+      "marker_paths": [
+        "services/m1/dependencies.py",
+        "services/m1/temporary_dependencies/adapters.py",
+        "services/m1/temporary_dependencies/run_demo.py"
+      ],
+      "verification": null
+    }
+  ]
+}

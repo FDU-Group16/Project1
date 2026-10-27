@@ -33,6 +33,7 @@ M2有效占用与已有个人预约冲突返回409；M3下架保留已有预约�
 
 ## 依赖与待办
 
+- 可查询的依赖登记见 [DEPENDENCIES.json](DEPENDENCIES.json)，包含 `M1-D-IDENTITY`、`M1-D-DELIVERY`。提供方可运行 `python3 scripts/check-dependencies.py --consumer M1` 定位负责组、临时路径和下一步；真实联调仍未验证，流程见[交接指南](../../docs/temporary-dependency-handoff.md)。
 - D-01身份、D-03通知、D-04审计仍未实现/真实集成。消费请求为提案；完整[TEMPORARY-DEPENDENCY清单](temporary_dependencies/README.md)记录精确路径、配置、激活方式、责任组、替换触发、检查与保留代码。
 - 正常模式仅使用真实HTTP，缺少配置/依赖失败返回503。开发双开关显式标注；SIMULATED和ACCEPTED不表示DELIVERED。
 - Scheduler需要独立受监督进程；健康检查不证明调度器存活。实时通知中心/送达查询属D-03后续范围。
@@ -40,6 +41,7 @@ M2有效占用与已有个人预约冲突返回409；M3下架保留已有预约�
 
 ## 最近交接
 
+- 2026-10-27：为 M1-01/M1-05 临时依赖增加结构化登记、提供方反查及 CI 一致性检查，支持按提供版本记录验收和清理；未修改业务或宣称真实依赖已就绪。工程范围与验证见[依赖交接任务](../../docs/tasks/2026-10-27-dependency-handoff.md)。
 - 2026-10-27：补齐 M1-01/M1-05 临时依赖与真实消费接口假设注释，明确 M2/M3 对应分工、可协调修改/替换范围及应保留业务，统一演示启动器依赖 ID；未改业务逻辑、契约、schema 或启用配置。范围与本轮验证见[注释优化任务](tasks/2026-10-27-temporary-interface-comments.md)。
 - 2026-10-27：集成已有 M1-01～08 / D-02 提交及公共启动文档，业务接口与 schema 未新增修改；本轮验证、推送和后续提供方联调边界见[集成记录](../../docs/tasks/2026-10-27-m1-develop-integration.md)。
 - 2026-10-22：完成M1-01～08后端、版本化契约、PostgreSQL行为测试及临时依赖清单；见[后端验收](tasks/2026-10-22-backend-verification.md)。按需求提交和综合验收由主任务继续记录。

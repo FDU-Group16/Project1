@@ -68,6 +68,14 @@ Implement the current module's scoped business behavior while keeping its extern
 
 Use the temporary-dependency section of `docs/ai-task-template.md` to define this scope before implementation and record the replacement outcome at handoff.
 
+### Discovering and handing off dependency completion
+
+Each consumer maintains `DEPENDENCIES.json` next to its module/shared-auth code, linked from its `STATUS.md` and detailed temporary inventory. Each provider maintains `PROVIDES.json` in its service directory. Keep provider readiness separate from consumer integration; see `docs/temporary-dependency-handoff.md` for the schema and commands. The report is derived from these records, not a shared progress table.
+
+When completing or changing a provider capability, update its capability record with the verified implementation revision, contract and evidence, then run `python3 scripts/check-dependencies.py --provider <capability-id>` (or `--provider-owner <group>`). Include affected dependency IDs, consumer owners and next integration actions in the task/PR handoff. Do not mark consumers complete or edit another module merely because the provider is ready. Consumer owners update their own integration state and versioned evidence; keep cleaned records for traceability.
+
+The default check rejects inconsistent registries, unregistered source markers and cleanup claims that still have temporary code markers. It reports outstanding integrations without blocking parallel provider work. Use a scoped `--require-complete` for integration acceptance after real checks and cleanup. Neither a ready declaration nor registry validation proves real authentication, delivery, deployment or compatibility. These commands do not authorize automatic cleanup, messaging, merges or pushes; existing task scopes apply.
+
 ## Module status and agent handoff
 
 Read `docs/module-status.md`, the affected module's `STATUS.md`, and the status and approved contracts of any provider the task will call. When collaboration is needed, apply the conditional develop procedure above and refresh those records before relying on the provider. These files are repository handoff records, not shared chat memory. If a status entry is stale or contradicts code or a contract, verify the evidence and report the discrepancy before relying on the capability. A proposed contract must never be treated as an available endpoint.

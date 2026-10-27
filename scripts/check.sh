@@ -11,6 +11,8 @@ else
   exit 1
 fi
 
+"${python_cmd[@]}" scripts/check-dependencies.py
+"${python_cmd[@]}" scripts/test-dependencies.py
 node scripts/check-contracts.mjs
 "${python_cmd[@]}" -m compileall -q services
 "${python_cmd[@]}" scripts/smoke.py
