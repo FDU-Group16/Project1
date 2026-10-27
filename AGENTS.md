@@ -8,7 +8,7 @@ Keep module-specific agent instructions and development documentation in the cor
 
 ## Current phase
 
-The m1 branch now contains the first scoped M1 and D-02 business implementation. M2/M3 and D-01/D-03/D-04 remain provider dependencies; consult module status records for implemented, tested and deployed boundaries. A contract proposal alone is not an available endpoint. Do not implement additional M1, M2, M3, or D features without a scoped task and acceptance criteria.
+The repository contains the first scoped M1 and D-02 business implementation. M2/M3 and D-01/D-03/D-04 remain provider dependencies; consult module status records for implemented, tested and deployed boundaries. A contract proposal alone is not an available endpoint. Do not implement additional M1, M2, M3, or D features without a scoped task and acceptance criteria.
 
 ## Sources of truth
 
@@ -24,8 +24,8 @@ If these sources conflict, surface the conflict in the change description and re
 - `services/m1` (`services.m1.main:app`): individual seat search, reservation, check-in, breach history.
 - `services/m2` (`services.m2.main:app`): whole-room requests and approvals.
 - `services/m3` (`services.m3.main:app`): repair work orders.
-- `services/d` (`services.d.main:app`): shared identity/RBAC, room and seat master data, notifications, audit. Ownership of this work is still a proposed team decision.
-- `apps/web`: Vue Web client shell and, later, browser-facing flows.
+- `services/d` (`services.d.main:app`): shared identity/RBAC, room and seat master data, notifications, audit. Confirmed subdomain ownership: M1 owns D-02 master data; M2 owns D-01 identity/RBAC; M3 owns D-03 notifications and D-04 audit. The user explicitly confirmed this task allocation on 2026-10-27; see `docs/decisions/0002-d-ownership.md`. This confirmation does not approve interface/schema proposals, detailed shared-frontend assignments, integration coordination arrangements, or release duties.
+- `apps/web`: Vue Web client and browser-facing flows.
 - `contracts/`: public cross-service API contracts; no service imports another service's internals or accesses another service's schema.
 
 Backend dependencies are managed by the root `pyproject.toml` and `uv.lock`; the Web client has its own npm lockfile in `apps/web`. Shared code may cover technical infrastructure, but must not hide cross-service business calls. Each FastAPI service has a separate ASGI entry point.
@@ -49,7 +49,7 @@ Attempt to synchronize `develop` only when the current task actually needs capab
 5. After a branch update, re-read the applicable `AGENTS.md`, module status records and dependency contracts from that checkout. When only inspecting a fetched ref, label its evidence with that ref and SHA. Record why synchronization was needed, the time, remote, working branch, fetched `develop` SHA, resulting HEAD, and outcome in the task notes or the current module's handoff record. Validate the actual checked-out code; reading a remote ref is not evidence of successful local integration.
 6. If the needed capability is not implemented in another business module, explain the missing interface or behavior, its effect on the current task, and the next integration step. Record the gap in the current module's task/status; do not implement or edit that other module's code, tests, rules or status files to fill it. Consumer-owned temporary substitutes may support parallel development under the rules below. A planned contract, static page or substitute is not an available provider capability. Report partial completion and the unverified dependency honestly.
 
-The authored changes for a module task stay within that business module's authorized frontend/backend directories. D and other clearly identified shared infrastructure are exceptions when needed by the task: define the requirement, limited scope and acceptance criteria before implementing shared changes, update their contracts/status when affected, and obtain the normal affected-owner review before merge. This exception does not ratify D ownership or authorize unrelated shared features. Impacts on other business modules are described in the current task/PR for their owners to handle.
+The authored changes for a module task stay within that business module's authorized frontend/backend directories. D and other clearly identified shared infrastructure are exceptions when needed by the task: define the requirement, limited scope and acceptance criteria before implementing shared changes, update their contracts/status when affected, and obtain the normal affected-owner review before merge. This exception does not change the confirmed D subdomain ownership or authorize unrelated shared features. Impacts on other business modules are described in the current task/PR for their owners to handle.
 
 The permitted fast-forward synchronizes already-integrated team code into the checkout; subsequent authored edits still follow the module boundaries above. This limited authorization does not permit moving `main`, a release branch or detached HEAD to `develop`, merging work into `develop`, pushing, force-pushing or releasing. Other branch merges and conflict handling remain subject to the human-review rules below.
 

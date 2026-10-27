@@ -3,7 +3,7 @@
 - 日期：2026-10-22
 - 状态：原始设计提案及独立原型；本轮 Vue 落地与验证进度见 [实施记录](vue-interface-implementation.md)。真实业务接口仍待接入。
 - 关联需求：D-01、E-01、E-07、E-09；M1 场景关联 M1-01～M1-08。
-- 依据：[Web 协作规则](../AGENTS.md)、[D 分工提案](../../../docs/decisions/0002-d-ownership.md)。
+- 依据：[Web 协作规则](../AGENTS.md)、[D 分工与公共前端治理记录](../../../docs/decisions/0002-d-ownership.md)。
 - 原型：[独立 HTML](prototypes/common-frontend.html)；[可编辑片段](prototypes/common-frontend.fragment.html)；[使用说明](prototypes/README.md)。
 - M1 页面细节见 [M1 前端方案](../src/modules/m1/docs/frontend-design.md)。
 

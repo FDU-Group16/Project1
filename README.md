@@ -1,6 +1,6 @@
 # 校园资源服务平台
 
-软件过程管理与工程伦理课程 Project 1。当前 `m1` 分支已实现 M1 座位预约及 D-02 房间/座位主数据；M2、M3 和 D 的其他子域仍按各自交接记录继续开发。
+软件过程管理与工程伦理课程 Project 1。当前 `develop` 已集成 M1 座位预约及 D-02 房间/座位主数据；M2、M3 和 D 的其他子域仍按各自交接记录继续开发。
 
 ## 技术栈
 
@@ -15,7 +15,7 @@
 
 ## M1 与 D-02 本地业务演示
 
-当前 `m1` 分支已实现 M1 预约/签到/提醒调度/历史/运营/写回提供方和 D-02 主数据。D-01 身份、D-03 通知、D-04 审计保留接口依赖；普通模式失败关闭，不会自动进入演示模式。其他业务模块和部署完成程度见各自状态。
+当前 `develop` 已集成 M1 预约/签到/提醒调度/历史/运营/写回提供方和 D-02 主数据。D-01 身份、D-03 通知、D-04 审计保留接口依赖；普通模式失败关闭，不会自动进入演示模式。其他业务模块和部署完成程度见各自状态。
 
 在本分支工作区安装 Python 3.12、uv、Node.js/npm，并启动 Docker 后：
 
@@ -35,45 +35,52 @@ bash scripts/check.sh
 
 以下原有 Compose/单服务命令仍可运行工程骨架；其发布配置尚未配置新业务数据库、D 身份提供方和调度进程，不能当作本次业务部署完成。
 
-## 运行项目
+## 通用本机开发启动
 
-只安装 Docker 的同学可在项目根目录启动全部服务，本机无需安装 Python、uv 或 Node.js：
+安装 Python 3.12（或 uv）和 Node.js 24 后，在项目根目录执行：
+
+```bash
+python3 scripts/dev.py
+```
+
+该通用启动器同时运行 M1、M2、M3、D 四个 FastAPI 服务和 Vue/Vite，默认开启后端热重载，在同一终端显示带服务名的日志；支持 macOS/Linux，也可从其他目录使用脚本的绝对路径启动。
+
+| 服务 | 本地地址 |
+| --- | --- |
+| Web | <http://127.0.0.1:5173> |
+| M1 API | <http://127.0.0.1:3101/docs> |
+| M2 API | <http://127.0.0.1:3102/docs> |
+| M3 API | <http://127.0.0.1:3103/docs> |
+| D API | <http://127.0.0.1:3104/docs> |
+
+缺少 `.venv` 时优先使用 uv 按锁文件安装；没有 uv 时使用 Python 3.12 创建虚拟环境并按 `pyproject.toml` 的运行依赖范围通过 pip 安装。缺少前端依赖时执行 `npm ci`；已有环境直接复用。首次安装需要访问依赖源，旧环境缺少新增依赖时使用 `--install`：
+
+```bash
+python3 scripts/dev.py --install
+python3 scripts/dev.py --no-reload
+```
+
+按 Ctrl+C 统一停止本次服务及子进程。端口冲突会报错，已有服务保持运行；任一启动进程退出会停止本次启动的其他服务。热重载中的代码错误由 Uvicorn 显示，修正后继续重载；`--no-reload` 可直接监控后端应用进程退出。
+
+启动器继承当前终端的环境配置，不读取 `.env`、创建数据库、生成凭据或自动启用开发替身，也不启动 M1 调度器。M1/D-02 业务需要独立数据库和相关依赖配置，见 [M1](services/m1/README.md) 与 [D-02](services/d/README.md)。未配置时健康端点仍可响应，业务请求会失败；本机合成业务演示请使用上方显式 `run_demo` 命令。Vite 已包含公开 API 代理。通用启动器及历史验证见[本地启动任务](docs/tasks/2026-10-22-local-dev.md)，本次协调见[集成记录](docs/tasks/2026-10-27-m1-develop-integration.md)。
+
+也可在安装依赖后分别启动服务：
+
+```bash
+.venv/bin/python -m uvicorn services.m1.main:app --host 127.0.0.1 --port 3101 --reload
+npm --prefix apps/web run dev
+```
+
+## Docker Compose 工程启动
+
+仅安装 Docker 的同学仍可启动工程服务：
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Web 地址为 `http://localhost:8080`，四个 API 的 `/healthz` 地址为 `http://localhost:3101/healthz` 至 `http://localhost:3104/healthz`。PostgreSQL 映射到本机 5433。按 `Ctrl+C` 停止，随后可运行 `docker compose down` 清理容器。
-
-本机开发需要 Python 3.12、Node.js 24 和 npm。没有 uv 时，可以用 Python 自带的 venv 和 pip 安装后端依赖：
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install 'fastapi>=0.158,<0.159' 'uvicorn>=0.30,<1' 'psycopg[binary]>=3.2,<4' 'httpx>=0.28,<1'
-npm --prefix apps/web ci
-```
-
-然后在两个终端分别启动 M1 和 Web（启动 M1 的终端需先激活 `.venv`）：
-
-```bash
-python -m uvicorn services.m1.main:app --host 0.0.0.0 --port 3101
-```
-
-```bash
-npm --prefix apps/web run dev
-```
-
-Web 开发服务地址为 `http://localhost:5173`。其余 API 入口为 `services.m2.main:app`、`services.m3.main:app`、`services.d.main:app`，可分别用端口 3102、3103、3104 启动。未配置业务数据库和真实依赖时，M1/D 的 `/healthz` 仍可响应，但业务请求会失败；需要本机业务演示时使用上方显式启动器。
-
-若已安装 uv，可用锁文件安装后端依赖，并用相同方式启动服务：
-
-```bash
-uv sync --frozen
-npm --prefix apps/web ci
-uv run uvicorn services.m1.main:app --host 0.0.0.0 --port 3101
-```
+Web 地址为 <http://localhost:8080>，四个 API 的 `/healthz` 端口为 3101–3104，PostgreSQL 映射到本机 5433。按 Ctrl+C 停止，再用 `docker compose down` 清理容器。现有 Compose 尚未接好新业务所需的独立数据库账号、真实身份等提供方及调度器；健康响应不代表业务可用。
 
 ## 本地验证
 
@@ -83,11 +90,11 @@ uv run uvicorn services.m1.main:app --host 0.0.0.0 --port 3101
 bash scripts/check.sh
 ```
 
-`scripts/check.sh` 检查 OpenAPI、四服务 HTTP 健康响应、隔离 PostgreSQL 上的 M1/D-02 业务及跨服务行为、关键行为变异、Vue 类型和构建。需启动 Docker；测试容器结束后自动移除。没有 uv 时使用 `.venv/bin/python`。pip 安装按版本范围解析依赖，不保证与 `uv.lock` 一致；精确复现请使用 uv。
+`scripts/check.sh` 检查 OpenAPI、四服务 HTTP 健康响应、隔离 PostgreSQL 上的 M1/D-02 业务及跨服务行为、关键行为变异、Vue 类型和构建。需启动 Docker；测试容器结束后自动移除。没有 uv 时使用 `.venv/bin/python`，并先执行 `.venv/bin/python -m pip install 'httpx>=0.28,<1'` 安装测试依赖。pip 安装按版本范围解析依赖，不保证与 `uv.lock` 一致；精确复现请使用 uv。
 
 ## `develop` 测试环境部署
 
-`develop` 测试部署工作流将检查通过的代码部署到 Linux 服务器并执行健康检查，配置与故障排查见 [测试环境部署](docs/deployment-staging.md)。既有静态界面部署证据见 [Web 交接](apps/web/STATUS.md)；本轮 M1/D-02 未推送或部署，发布前需配置独立数据库、真实身份/通知/审计提供方和调度进程并完成联调。
+`develop` 测试部署工作流将检查通过的代码部署到 Linux 服务器并执行健康检查，配置与故障排查见 [测试环境部署](docs/deployment-staging.md)。既有静态界面部署证据见 [Web 交接](apps/web/STATUS.md)；本次 M1/D-02 合入与推送见[集成记录](docs/tasks/2026-10-27-m1-develop-integration.md)；新业务部署可用性仍未验证，发布前需配置独立数据库、真实身份/通知/审计提供方和调度进程并完成联调。
 
 ## 协作入口
 
@@ -96,7 +103,7 @@ bash scripts/check.sh
 - [模块完成记录与 Agent 交接入口](docs/module-status.md)
 - [实施计划](docs/plan.md)
 - [跨模块接口登记](contracts/README.md)
-- [D 公共层归属提案](docs/decisions/0002-d-ownership.md)
+- [D 子域分工与治理记录](docs/decisions/0002-d-ownership.md)
 - [AI 开发任务模板](docs/ai-task-template.md)
 - [工程伦理议题记录](docs/ethics-log.md)
 
