@@ -72,7 +72,8 @@ services:
     environment:
       APP_MODULE: "services.d.main:app"
       PORT: "3104"
-      APP_ENV: "production"
+      APP_ENV: ${D_APP_ENV:-production}
+      D_TEST_ACCOUNTS_ENABLED: ${D_TEST_ACCOUNTS_ENABLED:-0}
       D_DATABASE_URL: ${D_DATABASE_URL:-}
       D_IDENTITY_URL: ${D_IDENTITY_URL:-http://d-api:3104}
       D_M1_TOKEN: ${D_M1_TOKEN:-}

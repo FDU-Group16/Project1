@@ -27,7 +27,8 @@ export async function request<T>(service: 'm1' | 'd' | 'm3', path: string, optio
     });
     if (epoch !== auth.epoch) throw new ApiError(0, 'SESSION_CHANGED', '身份已变更，请重新打开页面。');
     if (!response.ok) {
-      if (response.status === 401) clearSession('登录已过期或无效，请重新登录。');
+      // Anonymous password failures must stay on the form instead of remounting it via auth.epoch.
+      if (response.status === 401 && auth.session) clearSession('登录已过期或无效，请重新登录。');
       throw new ApiError(response.status, body?.error?.code ?? body?.code ?? 'HTTP_ERROR', body?.error?.message ?? body?.detail ?? (response.status === 403 ? '当前身份没有此操作权限。' : `服务暂时不可用（${response.status}），请稍后重试。`));
     }
     return body as T;

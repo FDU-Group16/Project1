@@ -2,7 +2,8 @@ import { reactive } from 'vue';
 
 // CONTRACT-ASSUMPTION WEB-D01-IDENTITY：Web M1/D-02 消费的身份/会话字段来自 D-01（M2 组）契约提案，可在协作范围内对齐调整。
 // 保留会话过期、身份切换和退出清理；完整修改/替换边界见 docs/auth-integration.md。
-export interface Identity { id: string; displayName: string; departmentId: string | null; permissions: string[] }
+// TEMPORARY-DEPENDENCY WEB-D01-IDENTITY：testAccount 仅用于标注服务端验证的课程测试账号，随测试账号适配协调清理。
+export interface Identity { id: string; displayName: string; departmentId: string | null; permissions: string[]; testAccount?: boolean }
 // TEMPORARY-DEPENDENCY WEB-D01-IDENTITY：synthetic 是本地开发标记，不是 D-01 响应要求；替身清理时可协调移除该字段及使用分支。
 export interface Session { accessToken: string; expiresAt: string; user: Identity; synthetic?: boolean }
 const key = 'campus.session.v1';

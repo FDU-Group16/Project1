@@ -67,6 +67,7 @@ def main():
         # their own disposable test rows. No consumer writes another schema.
         env.update(M3_TEST_DATABASE_URL=env['TEST_M3_DATABASE_URL'], M3_REQUIRE_POSTGRES='1', M3_REQUIRE_SCHEMA_OWNER='1', M3_TEST_ALLOW_RESET='1')
         subprocess.run([sys.executable, 'services/m3/tests/integration_real_providers.py'], cwd=ROOT, env=env, check=True)
+        subprocess.run([sys.executable, 'services/m3/tests/test_accounts_integration.py'], cwd=ROOT, env=env, check=True)
         subprocess.run([sys.executable, '-m', 'pytest', 'services/m3/tests', '-q'], cwd=ROOT, env=env, check=True)
     finally:
         if container:
