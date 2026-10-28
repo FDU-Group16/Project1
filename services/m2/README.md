@@ -1,6 +1,6 @@
 # M2 开发入口
 
-当前仅 `services.m2.main:app` 的健康检查可用。A0-01新增规范草案；A0-02新增可导入的Actor和TimeRange及14项行为测试。申请、审批、数据库、迁移和worker尚未实现。
+当前对外仍只有 `services.m2.main:app` 的健康检查。A0-05数据库事务基础已上传；A1-01本地完成申请核心数据的真实PostgreSQL保存、本人详情/分页，待验收。正式提交、审批、业务HTTP和页面尚未接入。下文分批记录保留各时点的历史边界。
 
 先读根与本模块AGENTS、[基线](docs/baseline.md)、[内部协议](docs/contracts.md)、[依赖](docs/external-contracts.md)、[A进度](docs/progress/A.md)。公开契约为 [M2 OpenAPI](../../contracts/m2.openapi.json) 0.1.0-proposed，不是运行时路由。
 
@@ -120,3 +120,25 @@ uv run --frozen python -m alembic -c services/m2/alembic.ini current
 完整数据库验证需独立 PostgreSQL 18、回环 TCP、m2_a_test 库及同名非超级用户；从忽略配置设置 `M2_TEST_DATABASE_URL`、`M2_TEST_DATABASE_PORT` 和 `M2_TEST_DATABASE_CONFIRM=m2_a_test` 后执行同一命令。URL 禁止 query 参数，避免 host/service 重定向；测试先查询实际数据库/用户/地址/端口/权限/版本，再迁移和创建本轮随机探针表，结束只删除该表。角色不能有 SUPERUSER/CREATEDB/CREATEROLE。不要用共享库冒充这个目标，也不把这些约束视作通用生产配置。
 
 本机私有集群与复现配置位于 A 忽略的运行目录，机器路径详见个人 progress。本批已在 PostgreSQL 18.6 验证空库迁移、事务和隔离检查，48 项测试全部通过（8 项真实 PG、无跳过），回滚故障注入有效，测试服务已停止。申请保存查询、HTTP、B 审批、M1/D 集成和部署尚未实现。详情见 [A0-05](docs/tasks/A0-05.md)。
+
+
+## A1-01 申请存储与本人查询（2026-10-27，本地待验收）
+
+源码：[模型](models.py)、[内部存储](applications.py)、[真实测试](tests/test_applications_postgres.py)，范围见[任务](docs/tasks/A1-01.md)。唯一迁移head为`0002_applications`，parent为`0001_m2_schema`，Alembic env显式注册同一Base的模型。旧0001和既有事务语义不变。
+
+`ApplicationStore.insert(uow=..., application_id=UUID, actor=..., data=ApplicationCreate, now=带时区datetime)`仅flush；顶层显式commit才落库。`get_mine`对未知/其他申请人ID均返回None；`list_mine`默认page=1/page_size=20，上限100，先按Actor.user_id过滤，再统计/分页。总数和页面由单条SQL获得，排序created_at倒序、UUID倒序，空页仍返回本人总数。返回不可变、已脱离Session的ApplicationData/ApplicationPage，时间为UTC。
+
+这是内部存储层。Actor须由真实可信适配器提供；构造Actor不会完成认证。ApplicationData只有申请核心输入，没有审批状态、截止、version或路由，**不是公开ApplicationView或已提交业务申请**。本批不注册路由，不自动批准资格/容量/审批政策。未来正式提交还需经评审的状态列、幂等记录、可信路由与真实B.initialize同事务。
+
+复验前核对本人私有数据库归属、目标/账号/空闲端口，并显式配置既有`M2_TEST_DATABASE_*`；不得使用共享数据库。A本机凭据恢复方式见个人进度，不在命令行展示密码。在仓库根目录运行：
+
+```bash
+# 仅在已启用并核实的私有测试数据库上；缺配置会显示skip，不能算数据库通过。
+.venv/bin/python -m unittest discover -s services/m2/tests -v
+# 快速展示：真实保存后跨Session读取，以及他人数据不可见。
+.venv/bin/python -m unittest services.m2.tests.test_applications_postgres.ApplicationStorageTests.test_commit_round_trip_preserves_all_fields_and_returns_detached_utc_snapshot services.m2.tests.test_applications_postgres.ApplicationStorageTests.test_detail_hides_other_owner_and_unknown_id -v
+```
+
+本轮57项PASS（原48+新增9，真实PG共17，无skip），工程检查PASS。每个测试仅清理自己生成的UUID；最终applications表0行，测试服务已停止。初次故障注入因复制包搜索路径配置错误实际导入了原实现，未算通过；修正隔离副本的包路径后，删掉owner过滤能使对应测试按越权返回失败。完整迁移重放从无业务表的base开始（保留Alembic元数据表），重复upgrade和`alembic check`均通过。
+
+部署迁移未授权。0002的downgrade会删除applications表及数据，只可在确认数据可丢弃时操作；普通测试仅upgrade，不自动降级或清空库。

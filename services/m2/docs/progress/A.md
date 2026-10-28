@@ -1,5 +1,16 @@
 # A 续做记录
 
+## 最新记录：2026-10-27 A1-01（READY_FOR_REVIEW）
+
+- A0-05已由代理按用户明确授权技术验收并普通推送7a95ca4a8e507060d6fedf40486168827839b7ff，GitHub API确认；48测试及根检查通过，无队友评审或部署。本批开工远端仍同SHA、工作树干净，无新B提交。
+- 继续已授权本地开发：申请核心主表/模型注册、内部存储和本人查询，共12文件，见[A1-01](../tasks/A1-01.md)。不触发develop，不改公共文件/依赖或B目录，不赋予本批上传授权。
+- 全部57测试通过（新增9项真实PG，总计17项真实PG，无skip）、无业务表base迁移重放/重复upgrade/模型无漂移、根check通过。初次故障注入误导入原包，未算有效；纠正一次性副本包路径后，删owner过滤使越权测试正确失败。副本已删除。
+- 本机恢复原私有PG18，仅127.0.0.1:55432/m2_a_test库与同名普通账号、m2 schema。测试后applications0行、只余applications/alembic_version两表，head0002_applications；本轮私有服务已停止/socket移除。凭据仍0600保存在.git/m2-a/postgres18/test-env.json，不输出；勿重复provision。以后复验不运行本轮降级重放脚本；仅在按归属/端口检查后启动原data、加载专用环境，执行unittest，最后停止本人服务。
+- .git/m2-a/A1-01-manifest.json及A1-01.patch记录精确范围/摘要；本聊天outputs/A1-01验收说明.md及完整diff/测试日志供审查。未stage/commit/push，等待本批验收授权；不叠加新批次。
+- ApplicationData只是核心数据，不是已提交业务申请或公开ApplicationView；尚无状态/version/审批路由/截止、持久幂等/审批接口/HTTP、真实D/M1/B组合。下一步先验收上传本批，再按已评审政策/接口补正式提交原子性，不能将私有存储测试当正式业务已可用。
+
+## 以下为历史记录
+
 ## 最新记录：2026-10-26 A0-04（READY_FOR_REVIEW）
 
 - 用户要求今天继续实际开发；完成请求作用域与规范化输入摘要，精确8文件见[任务](../tasks/A0-04.md)。本批未stage/commit/push，没有本批上传授权。

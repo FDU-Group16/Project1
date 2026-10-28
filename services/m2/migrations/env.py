@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy.schema import CreateSchema
 
 from services.m2.db import Base, SCHEMA, create_m2_engine, database_url_from_env
+from services.m2 import models  # noqa: F401 -- register the single M2 metadata
 
 if context.is_offline_mode():
     raise RuntimeError("M2 migrations require an explicitly configured online connection")

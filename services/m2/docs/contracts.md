@@ -1,6 +1,6 @@
 # M2 内部协议草案
 
-版本：0.1.0-proposed，2026-10-22；A主维护、B待评审。A0-02 已在 `services/m2/contracts.py` 实现 Actor 和 TimeRange；A0-03已上传ApplicationCreate，其余DTO、枚举及以下Port仍为签名草案，无数据库或可调用port实现，不能宣称M2-BASE完成。拟选同步接口，DEC-07若选择异步须整体修订。
+版本：0.1.0-proposed；A主维护、B待评审。Actor、TimeRange、ApplicationCreate、请求摘要和A0-05同步Base/Session/UoW已上传；A1-01本地新增核心申请存储（见末节），未上传。以下业务DTO、枚举及Port仍为签名草案，不能宣称M2-BASE完成。同步技术范围已获用户确认；业务政策与团队接口评审仍未完成。
 
 公开JSON类型、字段/错误/鉴权/分页见 [M2 OpenAPI](../../../contracts/m2.openapi.json)。当前只作结构检查；JSON合法不意味着业务API可用。
 
@@ -110,3 +110,20 @@ B需评审：上述签名、租约过期回执处理、结果落盘与编排崩�
 UoW 遵循既有显式 commit 约定：enter 开启一次事务，session 属性只在活跃且未终结阶段可用；顶层 commit 后结束事务，异常/遗漏 commit 的退出回滚，最后永久关闭 Session；显式 rollback 同样终结本次事务。提交失败先 rollback 并继续抛出故障。每个 UoW 单次使用，禁止嵌套/复用，ports 只可使用/flush 共享 session。成功 commit 后发生的异常不能回滚已提交结果，因此顶层应把 commit 放在最后一步。网络 I/O 在事务外。
 
 M2 metadata 默认 schema=m2；连接工厂不联网、不加载 .env。Alembic head 为 `0001_m2_schema`，版本表限定 m2，未含申请表；B 后续模型必须继承同一 Base、迁移衔接唯一 parent。真实事务与迁移验证结果见 A0-05，不能以可导入替代数据库通过。
+
+
+## A1-01 核心申请存储（2026-10-27，本地待验收）
+
+唯一主表模型`services.m2.models.Application`使用既有Base；新增迁移0002_applications，无第二Base/迁移链。保存application_id(UUID)、applicant_id/applicant_department_id/room_id(不透明Text)、start_at/end_at/created_at(timestamptz)、purpose、attendee_count。主键防重复ID；非空、正人数、用途长度、时序约束是输入结构约束。未设置默认业务状态/截止或审批层级，不改变公开协议。
+
+内部存储`services.m2.applications.ApplicationStore`：
+
+```python
+insert(*, uow, application_id: UUID, actor: Actor, data: ApplicationCreate, now: datetime) -> ApplicationData
+get_mine(*, uow, application_id: UUID, actor: Actor) -> ApplicationData | None
+list_mine(*, uow, actor: Actor, page: int = 1, page_size: int = 20) -> ApplicationPage
+```
+
+insert重验输入、要求非空可信院系及带时区时钟，仅flush；重复UUID由数据库报错并由UoW整体回滚，不当作幂等键回放。ApplicationData为不可变核心数据快照，ApplicationPage.items为tuple；它们不是公开ApplicationView。get_mine/list_mine始终按Actor.user_id过滤，不接受浏览器另传owner；未知/他人ID同为None。分页正整数、每页1–100，created_at/UUID倒序，单SQL快照计算本人total和页面，空页保留total。
+
+该仓储不是完整ApplicationPort，不包含transition或审批人查询；不得直接暴露为提交/详情HTTP。后续顶层必须真实认证、资格/房间校验，再补经评审的状态/version/路由/截止字段、幂等和真实审批初始化；这些写入共享一个UoW。B初始化可信快照、回执持久恢复建议仍待独立共同接口批次。

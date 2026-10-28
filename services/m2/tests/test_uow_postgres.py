@@ -65,7 +65,8 @@ class DatabaseConfigurationTests(unittest.TestCase):
 
     def test_migration_chain_has_one_head(self):
         script = ScriptDirectory.from_config(Config(str(CONFIG)))
-        self.assertEqual(script.get_heads(), ["0001_m2_schema"])
+        self.assertEqual(script.get_heads(), ["0002_applications"])
+        self.assertEqual(script.get_revision("0002_applications").down_revision, "0001_m2_schema")
         self.assertIsNone(script.get_revision("0001_m2_schema").down_revision)
 
 
@@ -190,7 +191,7 @@ class PostgresUnitOfWorkTests(unittest.TestCase):
         self.migrate()
         with self.engine.connect() as connection:
             self.assertEqual(connection.execute(text(
-                "SELECT version_num FROM m2.alembic_version")).scalars().all(), ["0001_m2_schema"])
+                "SELECT version_num FROM m2.alembic_version")).scalars().all(), ["0002_applications"])
             self.assertIsNone(connection.scalar(text("SELECT to_regclass('public.alembic_version')")))
 
 
