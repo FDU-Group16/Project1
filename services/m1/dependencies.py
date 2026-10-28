@@ -2,6 +2,7 @@
 import json
 import os
 import secrets
+from http.client import HTTPException
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -45,7 +46,7 @@ def request_d(path, token, payload=None):
         if exc.code == 404 and path.startswith('/internal/v1/rooms/'):
             raise Problem(404, 'ROOM_NOT_FOUND', 'Room not found.') from None
         raise Problem(503, 'DEPENDENCY_UNAVAILABLE', 'D request failed; retry later.') from None
-    except (URLError, TimeoutError, ValueError, OSError):
+    except (HTTPException, URLError, TimeoutError, ValueError, OSError):
         raise Problem(503, 'DEPENDENCY_UNAVAILABLE', 'D is unavailable or returned invalid data.') from None
 
 

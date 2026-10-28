@@ -1,17 +1,93 @@
 """D wire-boundary tests use no database and no real identity provider."""
 import copy
+from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from threading import Thread
 import unittest
 from unittest.mock import patch
+from fastapi.testclient import TestClient
 from services.m1 import core,dependencies
+from services.m1.main import app
 from services.platform import Problem
 
 ROOM={'id':'room','name':'Room','departmentId':None,'openHour':8,'closeHour':22,
       'weekdays':[0,1,2,3,4],'active':True,'retired':False,
       'seats':[{'id':'seat','roomId':'room','number':'01','hasSocket':True,'active':True,'retired':False}]}
+
+
+@contextmanager
+def http_provider(*, raw=None, body=b'{}', status=200):
+    """Serve real HTTP, including intentionally broken wire responses."""
+    requests=[]
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            requests.append((self.command,self.path))
+            if raw is not None:
+                self.wfile.write(raw)
+            else:
+                self.send_response(status)
+                self.send_header('Content-Type','application/json')
+                self.send_header('Content-Length',str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            self.close_connection=True
+        do_POST=do_GET
+        def log_message(self,*args):
+            pass
+    server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+    thread=Thread(target=lambda:server.serve_forever(poll_interval=0.01),daemon=True)
+    thread.start()
+    try:
+        with patch.dict(os.environ,{'D_BASE_URL':f'http://127.0.0.1:{server.server_port}'}):
+            yield requests
+    finally:
+        server.shutdown();server.server_close();thread.join(timeout=2)
+
+
+class HttpFailureBoundary(unittest.TestCase):
+    def test_broken_provider_returns_public_503_problem_details(self):
+        cases={
+            'truncated':{'raw':b'HTTP/1.1 200 OK\r\nContent-Length: 200\r\n\r\n{"id":"partial'},
+            'invalid-status':{'raw':b'not-an-http-status\r\n\r\n'},
+            'disconnected':{'raw':b''},
+            'invalid-json':{'body':b'{"id":'},
+            'non-object':{'body':b'[]'},
+        }
+        with patch.dict(os.environ,{'M1_USE_DEV_DEPENDENCIES':'0','M1_DATABASE_URL':''}):
+            with TestClient(app,raise_server_exceptions=False) as client:
+                for name,response in cases.items():
+                    with self.subTest(response=name),http_provider(**response) as requests:
+                        result=client.get('/api/v1/settings',headers={'Authorization':'Bearer synthetic-review-token'})
+                        self.assertEqual(result.status_code,503)
+                        self.assertEqual(result.headers['content-type'],'application/problem+json')
+                        self.assertEqual(result.json()['code'],'DEPENDENCY_UNAVAILABLE')
+                        self.assertEqual(result.json()['status'],503)
+                        self.assertNotIn('synthetic-review-token',result.text)
+                        self.assertNotIn('partial',result.text)
+                        self.assertEqual(requests,[('GET','/api/v1/auth/me')])
+
+    def test_post_truncated_delivery_response_is_unavailable(self):
+        with http_provider(raw=b'HTTP/1.1 200 OK\r\nContent-Length: 200\r\n\r\n{"eventId":') as requests:
+            with self.assertRaises(Problem) as failure:
+                dependencies.request_d('/internal/v1/notifications','synthetic-token',{'eventId':'synthetic-event'})
+            self.assertEqual((failure.exception.status,failure.exception.code),(503,'DEPENDENCY_UNAVAILABLE'))
+            self.assertEqual(requests,[('POST','/internal/v1/notifications')])
+
+    def test_valid_responses_and_http_error_mapping_remain_compatible(self):
+        with http_provider(body=b'{"id":"synthetic-user"}'):
+            self.assertEqual(dependencies.request_d('/api/v1/auth/me','synthetic-token'),{'id':'synthetic-user'})
+        cases=[(401,'/api/v1/auth/me',401,'DEPENDENCY_AUTH_REJECTED'),
+               (403,'/api/v1/auth/me',403,'DEPENDENCY_AUTH_REJECTED'),
+               (404,'/internal/v1/rooms/missing',404,'ROOM_NOT_FOUND'),
+               (404,'/api/v1/auth/me',503,'DEPENDENCY_UNAVAILABLE'),
+               (500,'/api/v1/auth/me',503,'DEPENDENCY_UNAVAILABLE')]
+        for status,path,expected,code in cases:
+            with self.subTest(status=status,path=path),http_provider(status=status):
+                with self.assertRaises(Problem) as failure:
+                    dependencies.request_d(path,'synthetic-token')
+                self.assertEqual((failure.exception.status,failure.exception.code),(expected,code))
 
 
 class AdapterBoundary(unittest.TestCase):
