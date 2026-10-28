@@ -16,6 +16,10 @@ fi
 node scripts/check-contracts.mjs
 "${python_cmd[@]}" -m compileall -q services
 "${python_cmd[@]}" scripts/smoke.py
-"${python_cmd[@]}" scripts/test-business.py
+if [[ "${BUSINESS_TEST_EXTERNAL:-0}" == "1" ]]; then
+  "${python_cmd[@]}" scripts/test-business.py --external
+else
+  "${python_cmd[@]}" scripts/test-business.py
+fi
 npm --prefix apps/web run typecheck
 npm --prefix apps/web run build

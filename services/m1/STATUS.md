@@ -1,5 +1,7 @@
 # M1 模块状态与交接
 
+2026-10-29：新增独立调度服务的 Compose 配置、`004_scheduler_workers.sql` 心跳迁移、受管理权限保护的 `GET /api/v1/scheduler` 聚合监测与本实例 `--healthcheck`；周期连续失败退出供监督重启，投递失败保留重试并显示积压。独立 PostgreSQL 16.2 与子进程已验证无 HTTP 自动处理、双实例、重启去重、强制结束后过期、缺迁移/失败退出及发布健康门槛；完整检查与最终数量见[本轮任务](tasks/2026-10-29-scheduler-monitoring.md)。部署操作见[指南](deployment/README.md)，契约 [v0.1.0-proposed](../../contracts/m1-scheduler.md) 待受影响维护者评审。当前是本地 m1 开发，未合入 develop/发布；Docker/PostgreSQL18、真实 D-01/03/04 和告警渠道未验证。
+
 2026-10-28 修复：M1-01/M1-05 的 D HTTP 消费端现在将截断响应、异常状态行等协议错误映射为 `503 DEPENDENCY_UNAVAILABLE`；保留鉴权/房间不存在语义和禁止重定向。新增真实回环 HTTP / 公开 API 回归，M1 8 项与 D 身份 4 项适配器测试通过。本轮为 m1 分支修复，无新增接口/迁移/部署；统一检查在 PostgreSQL 测试阶段因缺少 Docker 停止，完整数据库回归未完成。范围、失败先验和验证见[本轮任务](tasks/2026-10-28-http-checkin-fixes.md)，远端 CI 结果以修复提交对应的运行记录为准。
 
 更新时间：2026-10-27。M1-01～08 实现 `m1@0b37222` 已按用户授权快进集成至本地 `develop`，不代表真实外部依赖或部署验收；[本次集成与推送记录](../../docs/tasks/2026-10-27-m1-develop-integration.md)。原主任务：[按需求完成M1与D-02](tasks/2026-10-22-completion.md)；详细验证：[后端验收记录](tasks/2026-10-22-backend-verification.md)。

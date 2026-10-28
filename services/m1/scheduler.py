@@ -4,11 +4,15 @@ Run `python -m services.m1.scheduler --once` or without --once for polling.
 Tests inject `at`; HTTP callers cannot override the server clock.
 """
 import argparse
-import time
+import json
+import math
+import os
+import signal
+from threading import Event
 from datetime import timedelta
 from uuid import uuid4
 from services.platform import utc_text
-from services.m1 import core, dependencies
+from services.m1 import core, dependencies, monitoring
 
 
 def notification_context(row):
@@ -101,24 +105,70 @@ def flush_outbox(at=None, limit=100):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument('--once',action='store_true')
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument('--once',action='store_true')
+    mode.add_argument('--healthcheck',action='store_true')
     parser.add_argument('--interval',type=float,default=30)
+    parser.add_argument('--failure-limit',type=int,default=3)
+    parser.add_argument('--batch-size',type=int,default=20)
     args=parser.parse_args()
-    if args.interval<=0:
-        parser.error('--interval must be positive')
-    core.migrate()
-    print('M1 scheduler dependency mode:',dependencies.dependency_mode(),flush=True)
-    while True:
-        try:
-            print({'noShows':process_due(),'outbox':flush_outbox()},flush=True)
-        except Exception as exc:
-            print({'schedulerError':getattr(exc,'code',type(exc).__name__)},flush=True)
+    if not math.isfinite(args.interval) or not 0<args.interval<=3600:
+        parser.error('--interval must be positive, finite and at most 3600 seconds')
+    if not 1<=args.failure_limit<=100:
+        parser.error('--failure-limit must be between 1 and 100')
+    if not 1<=args.batch_size<=1000:
+        parser.error('--batch-size must be between 1 and 1000')
+    try:
+        instance=monitoring.worker_id()
+        dependency_mode=dependencies.dependency_mode()
+        if args.healthcheck:
+            healthy=monitoring.own_healthy(instance)
+            print(json.dumps({'status':'healthy' if healthy else 'unhealthy'}),flush=True)
+            return 0 if healthy else 1
+        stale=int(os.getenv('M1_SCHEDULER_STALE_SECONDS',str(max(90,math.ceil(args.interval*3)))))
+        if not args.interval<stale<=86400:
+            raise ValueError('invalid stale threshold')
+        core.migrate()
+        run=monitoring.register(instance,stale)
+    except Exception as exc:
+        print(json.dumps({'status':'unhealthy','code':monitoring.error_code(exc)}),flush=True)
+        return 1
+    stop=Event()
+    previous={sig:signal.signal(sig,lambda *_:stop.set()) for sig in (signal.SIGTERM,signal.SIGINT)}
+    print(json.dumps({'workerId':instance,'dependencyMode':dependency_mode}),flush=True)
+    failures=0
+    exit_code=0
+    try:
+        while not stop.is_set():
+            try:
+                monitoring.update(instance,run,'RUNNING')
+                result={'noShows':process_due(),'outbox':flush_outbox(limit=args.batch_size)}
+                monitoring.update(instance,run,'OK')
+                failures=0
+                print(json.dumps(result),flush=True)
+            except Exception as exc:
+                failures+=1
+                code=monitoring.error_code(exc)
+                try:
+                    monitoring.update(instance,run,'ERROR',code)
+                except Exception:
+                    pass  # DB outage expires the last successful heartbeat.
+                print(json.dumps({'schedulerError':code,'consecutiveFailures':failures}),flush=True)
+                if args.once or failures>=args.failure_limit or code=='SCHEDULER_INSTANCE_REPLACED':
+                    exit_code=1
+                    break
             if args.once:
-                raise
-        if args.once:
-            break
-        time.sleep(args.interval)
+                break
+            stop.wait(args.interval)
+    finally:
+        try:
+            monitoring.update(instance,run,'STOPPED')
+        except Exception:
+            pass
+        for sig,handler in previous.items():
+            signal.signal(sig,handler)
+    return exit_code
 
 
 if __name__=='__main__':
-    main()
+    raise SystemExit(main())

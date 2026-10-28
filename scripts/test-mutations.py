@@ -9,12 +9,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import unittest
 from unittest.mock import patch
 
-from services.m1 import core
+from services.m1 import core, monitoring
 from services.m1.tests.test_behavior import M1Behavior
+from services.m1.tests.test_scheduler import SchedulerBehavior
 
 
-def run_case(method):
-    return unittest.TextTestRunner(stream=io.StringIO()).run(unittest.TestSuite([M1Behavior(method)]))
+def run_case(method, case=M1Behavior):
+    return unittest.TextTestRunner(stream=io.StringIO()).run(unittest.TestSuite([case(method)]))
 
 
 for target, replacement, method in (
@@ -29,3 +30,13 @@ for target, replacement, method in (
     if not restored.wasSuccessful() or restored.skipped:
         raise AssertionError(f'Restored behavior failed: {method}')
     print(f'PASS mutation: breaking {target} fails {method}; restoring it passes.')
+
+method='test_expired_success_is_unhealthy_even_with_another_live_instance'
+with patch.object(monitoring,'worker_status',lambda row,at:'healthy'):
+    result=run_case(method,SchedulerBehavior)
+    if result.errors or not result.failures or result.skipped:
+        raise AssertionError('Ignoring expired heartbeats did not fail the scheduler test')
+restored=run_case(method,SchedulerBehavior)
+if not restored.wasSuccessful() or restored.skipped:
+    raise AssertionError('Restored scheduler health failed')
+print('PASS mutation: expired heartbeats cannot report healthy; restoring it passes.')

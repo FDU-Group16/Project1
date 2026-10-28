@@ -31,8 +31,28 @@ services:
     environment:
       APP_MODULE: "services.m1.main:app"
       PORT: "3101"
+      M1_DATABASE_URL: ${M1_DATABASE_URL:-}
     ports:
       - "3101:3101"
+
+  m1-scheduler:
+    <<: *api
+    profiles: [m1-business]
+    command: ["python", "-m", "services.m1.scheduler"]
+    environment:
+      APP_ENV: "production"
+      M1_DATABASE_URL: ${M1_DATABASE_URL:-}
+      M1_SCHEDULER_ID: "m1-scheduler"
+      D_BASE_URL: "http://d-api:3104"
+      D_NOTIFICATION_TOKEN: ${D_NOTIFICATION_TOKEN:-}
+      D_AUDIT_TOKEN: ${D_AUDIT_TOKEN:-}
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-m", "services.m1.scheduler", "--healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   m2-api:
     <<: *api

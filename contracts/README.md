@@ -8,6 +8,8 @@ FastAPI 服务运行时生成的 OpenAPI 页面只描述当时已注册的路由
 
 ## 2026-10-22 M1 / D-02 实施范围
 
+- 2026-10-29：M1 调度器运行监测 [v0.1.0-proposed](m1-scheduler.md)，新增受管理权限保护的聚合查询与本机健康命令；既有业务及存活接口兼容，具体实现/验证见 M1 STATUS。
+
 - D-02 主数据：[`d-master-data.openapi.json`](d-master-data.openapi.json) 与 [行为说明](d-master-data.md)，v0.1.0（proposed）。
 - M1 公开业务：[`m1-public.openapi.json`](m1-public.openapi.json) 与 [行为说明](m1-public.md)，v0.1.0-proposed。
 - M1 写回提供方：[`m1-room-blocks.openapi.json`](m1-room-blocks.openapi.json)，v0.2.0-proposed；来源键、请求/响应形状兼容，明确本次用户选择的冲突规则及认证配置。

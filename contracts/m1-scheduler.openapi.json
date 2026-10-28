@@ -1,0 +1,227 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "M1 scheduler monitoring",
+    "version": "0.1.0-proposed"
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/scheduler": {
+      "get": {
+        "operationId": "getM1SchedulerStatus",
+        "summary": "Aggregate monitoring; operations:read or room:manage required",
+        "responses": {
+          "200": {
+            "description": "Observed operational state, including unhealthy workers; not full business readiness",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "observedAt",
+                    "dependencyMode",
+                    "status",
+                    "healthyWorkers",
+                    "workers",
+                    "outbox",
+                    "overdueNoShows"
+                  ],
+                  "properties": {
+                    "observedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "dependencyMode": {
+                      "enum": [
+                        "real",
+                        "development-substitutes"
+                      ]
+                    },
+                    "status": {
+                      "enum": [
+                        "healthy",
+                        "degraded",
+                        "unhealthy"
+                      ]
+                    },
+                    "healthyWorkers": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "workers": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "workerId",
+                          "status",
+                          "lastErrorCode",
+                          "cycles",
+                          "failures",
+                          "staleAfterSeconds",
+                          "lastStartedAt",
+                          "lastFinishedAt",
+                          "lastSuccessAt"
+                        ],
+                        "properties": {
+                          "workerId": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "healthy",
+                              "stale",
+                              "starting",
+                              "error",
+                              "stopped"
+                            ]
+                          },
+                          "lastErrorCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "cycles": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "failures": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "staleAfterSeconds": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "lastStartedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "lastFinishedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "lastSuccessAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "outbox": {
+                      "type": "object",
+                      "required": [
+                        "pending",
+                        "due",
+                        "failedPending",
+                        "accepted",
+                        "delivered",
+                        "simulated",
+                        "suppressed",
+                        "oldestPendingAt"
+                      ],
+                      "properties": {
+                        "pending": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "due": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "failedPending": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "accepted": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "delivered": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "simulated": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "suppressed": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "oldestPendingAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "overdueNoShows": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Management permission required",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Monitoring database unavailable or not migrated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

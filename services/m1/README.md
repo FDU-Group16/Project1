@@ -1,5 +1,7 @@
 # M1 seat reservation service
 
+Scheduler deployment, instance health, backlog inspection and operator actions: [deployment guide](deployment/README.md). The independent worker is now defined in staging Compose; local Compose enables it with profile `m1-business`. `GET /api/v1/scheduler` exposes management-only aggregate monitoring ([contract](../../contracts/m1-scheduler.md)); `/healthz` remains process liveness. A scheduler container is marked unhealthy on stale/error heartbeats, and consecutive cycle exceptions cause nonzero exit for supervised restart. Notification provider failures are reported as backlog rather than treated as successful delivery.
+
 Implemented requirement paths and verification are recorded in [STATUS.md](STATUS.md). Public and internal interfaces are versioned in `contracts/m1-public.md`, `contracts/m1-public.openapi.json` and `contracts/m1-room-blocks.openapi.json` (pending review).
 
 Configure a provisioned PostgreSQL schema through `M1_DATABASE_URL`. Run `uv run uvicorn services.m1.main:app --port 3101`; startup replays ordered migrations under `migrations/`. An unset database URL still allows `/healthz` for scaffold smoke checks, while business APIs return 503. The scheduler is a separate required process: `uv run python -m services.m1.scheduler`, or add `--once` for a bounded pass. It polls every 30 seconds by default, persists all state and supports restarts/multiple workers. Readiness and deployment supervision are integration responsibilities; `/healthz` does not assert dependency or scheduler health.

@@ -7,7 +7,7 @@ if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
   exit 1
 fi
 
-deployment_root="$(readlink -f "${HOME}/campus-resource-staging")"
+deployment_root="$(readlink -f "${STAGING_DEPLOYMENT_ROOT:-${HOME}/campus-resource-staging}")"
 release="${deployment_root}/releases/${sha}"
 env_file="${deployment_root}/.env"
 current_link="${deployment_root}/current"
@@ -40,6 +40,13 @@ healthy() {
   for port in 3101 3102 3103 3104; do
     curl --fail --silent --max-time 3 "http://127.0.0.1:${port}/healthz" >/dev/null || return 1
   done
+  # Old releases predate the scheduler. Check it whenever the release defines it;
+  # rollback can still validate an old release without inventing a worker there.
+  local services
+  services="$(compose_for "$source_dir" config --services)" || return 1
+  if [[ "$services" == *"m1-scheduler"* ]]; then
+    compose_for "$source_dir" exec -T m1-scheduler python -m services.m1.scheduler --healthcheck >/dev/null 2>&1 || return 1
+  fi
   local web_address
   web_address="$(compose_for "$source_dir" port web 80)" || return 1
   if [[ "$web_address" == 0.0.0.0:* ]]; then
