@@ -1,6 +1,6 @@
 # M2 内部协议草案
 
-版本：0.1.0-proposed；A主维护、B待评审。Actor、TimeRange、ApplicationCreate、请求摘要和A0-05同步Base/Session/UoW已上传；A1-01本地新增核心申请存储（见末节），未上传。以下业务DTO、枚举及Port仍为签名草案，不能宣称M2-BASE完成。同步技术范围已获用户确认；业务政策与团队接口评审仍未完成。
+版本：0.1.0-proposed；A主维护、B待评审。Actor、TimeRange、ApplicationCreate、请求摘要和A0-05同步Base/Session/UoW已上传；A1-01核心申请存储已上传；A1-02新增核心保存防重（见末节），本地待验收。以下业务DTO、枚举及Port仍为签名草案，不能宣称M2-BASE完成。同步技术范围已获用户确认；业务政策与团队接口评审仍未完成。
 
 公开JSON类型、字段/错误/鉴权/分页见 [M2 OpenAPI](../../../contracts/m2.openapi.json)。当前只作结构检查；JSON合法不意味着业务API可用。
 
@@ -127,3 +127,18 @@ list_mine(*, uow, actor: Actor, page: int = 1, page_size: int = 20) -> Applicati
 insert重验输入、要求非空可信院系及带时区时钟，仅flush；重复UUID由数据库报错并由UoW整体回滚，不当作幂等键回放。ApplicationData为不可变核心数据快照，ApplicationPage.items为tuple；它们不是公开ApplicationView。get_mine/list_mine始终按Actor.user_id过滤，不接受浏览器另传owner；未知/他人ID同为None。分页正整数、每页1–100，created_at/UUID倒序，单SQL快照计算本人total和页面，空页保留total。
 
 该仓储不是完整ApplicationPort，不包含transition或审批人查询；不得直接暴露为提交/详情HTTP。后续顶层必须真实认证、资格/房间校验，再补经评审的状态/version/路由/截止字段、幂等和真实审批初始化；这些写入共享一个UoW。B初始化可信快照、回执持久恢复建议仍待独立共同接口批次。
+
+
+## A1-02 核心创建防重（2026-10-28，本地待验收）
+
+内部入口`application_creation.ApplicationCreationStore.save(*, uow, actor: Actor, data: ApplicationCreate, key: str, now: datetime) -> ApplicationSaveResult`。
+结果不可变：`application: ApplicationData`、`replayed: bool`。同作用域不同输入抛`ApplicationCreationConflict`（错误消息不含键/申请内容）。
+作用域user_id由Actor提供，action固定core-create-v1、target固定/applications/core，key保持原义；复用A0-04的规范化摘要版本，不改其编码。
+
+每次调用前顶层须重新验证身份/权限；数据层不构造身份，不缓存授权，不接受浏览器指定owner。回放仍用get_mine校验实际归属，坏关联显式失败而不泄露其他申请。
+模型`ApplicationCreationKey`与`Application`共用唯一Base；四字段联合PK、application_id唯一且FK指向现有主表、非空/摘要格式/内部作用域约束。无TTL、覆盖或删除入口。
+
+READ COMMITTED下先查键，新键在SAVEPOINT写候选申请+ON CONFLICT DO NOTHING键；重复候选仅SAVEPOINT rollback，然后新语句读取已提交赢家。父UoW仍由顶层commit/rollback，数据库故障不吞，其他隔离级别拒绝。SAVEPOINT释放不是业务commit；后续用例失败整体回滚申请和键。并发赢家回滚时另一请求可成为创建者。
+
+公开OpenAPI仍0.1.0-proposed，未注册新HTTP。该表不是所有公开写操作的统一幂等状态机，没有operation_id/202/终结响应快照。未来正式提交须另定公共幂等作用域/结果生命周期、经确认的工作流和真实B.initialize同事务；不能把本批核心保存记录回放成“已提交申请”。
+唯一head0003_creation_keys，parent0002_applications；B需要评审后在实际接入head接续迁移，不另建申请表。无新依赖、公共配置、B实现或跨模块调用。边界与68测试证据见[A1-02](tasks/A1-02.md)。

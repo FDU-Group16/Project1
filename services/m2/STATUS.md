@@ -1,5 +1,16 @@
 # M2 模块状态与交接
 
+## 当前状态：2026-10-28 A1-02（本地待验收）
+
+- A1-01已上传m2@734cc271cc833cef822aae2819f22af9c472c845；本批开工GitHub REST确认远端同SHA，工作树干净。下方旧待上传记录为历史。
+- 新增[核心创建防重仓储](application_creation.py)及ApplicationCreationKey，复用现有申请主表/摘要/UoW。相同用户、键、规范化输入返回原申请；改内容抛ApplicationCreationConflict；不同用户独立。并发由唯一约束仲裁；申请与键同事务，失败候选用SAVEPOINT撤销，顶层仍显式commit。
+- 68项测试PASS（原57+新增11，28项真实PostgreSQL、无skip）；真实双连接阻塞后验证commit回放、rollback接替、不同输入冲突；原事务已有写入保留、无多余申请。故障注入关闭摘要比较后测试正确失败。重复upgrade、旧申请保留、alembic check无漂移、根check.sh均PASS。
+- 新增迁移0003_creation_keys，parent=0002_applications；未降级重放已有表。私有PG合成数据全部清理，两业务表0行，服务停止。完整范围与证据见[A1-02](docs/tasks/A1-02.md)。
+- 对外仍只有GET /healthz；这里仅核心保存防重，动作core-create-v1/目标/applications/core。不是正式提交或通用HTTP幂等回执，无202处理中/审批操作恢复；真实身份、资格、HTTP/页面、B/M1/D联调及政策确认仍待后续。
+- READY_FOR_REVIEW，12文件未stage/commit/push，无PR/队友Review/部署；远端CI未核实。B需评审同一主表/新表和迁移parent，不复制基础。
+
+## 以下为历史交接快照
+
 ## 当前状态：2026-10-27 A1-01（本地待验收）
 
 - A0-05已按用户“验证并上传这一批”授权上传m2@7a95ca4a8e507060d6fedf40486168827839b7ff，远端SHA已确认；本轮开工远端仍同SHA。旧READY_FOR_REVIEW为提交前快照。

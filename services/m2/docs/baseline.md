@@ -1,5 +1,20 @@
 # M2 工程基线
 
+## 当前基线：2026-10-28 A1-02
+
+A1-01已上传m2@734cc271cc833cef822aae2819f22af9c472c845，本批开工GitHub REST确认同SHA；B最新已上传交接仍为10月26日接口评审。纯M2内部任务，不触发develop同步，未移动分支。
+
+本地A1-02增加ApplicationCreationStore/ApplicationSaveResult/ApplicationCreationConflict及ApplicationCreationKey。
+唯一迁移链为0001_m2_schema → 0002_applications → 0003_creation_keys；Base/Session/UoW及旧申请表保持一份。
+只在READ COMMITTED内部事务保存核心申请和创建键，用四字段唯一约束及SAVEPOINT避免并发重复。
+没有完整ApplicationPort、工作流状态、正式装配或公开HTTP业务接口；独立core-create-v1作用域不得冒充正式提交成功。
+
+68项测试通过（28真实PG），旧申请迁移保留、重复upgrade/无漂移、摘要故障注入和根check通过。
+本批尚未提交上传/团队评审/部署，后续B迁移以实际接入并确认的head衔接，不能把本地文档当远端已有。
+范围/兼容边界见[A1-02](tasks/A1-02.md)与[内部协议](contracts.md)。
+
+## 以下为历史基线快照
+
 ## 当前基线：2026-10-27
 
 已上传的A0-05为m2@7a95ca4a8e507060d6fedf40486168827839b7ff，本轮GitHub ref API确认远端同SHA；B最新已上传接口评审仍为29d0f5b。纯M2任务不触发develop同步，没有合并或移动分支。

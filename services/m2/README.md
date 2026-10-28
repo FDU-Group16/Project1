@@ -1,6 +1,6 @@
 # M2 开发入口
 
-当前对外仍只有 `services.m2.main:app` 的健康检查。A0-05数据库事务基础已上传；A1-01本地完成申请核心数据的真实PostgreSQL保存、本人详情/分页，待验收。正式提交、审批、业务HTTP和页面尚未接入。下文分批记录保留各时点的历史边界。
+当前对外仍只有 `services.m2.main:app` 的健康检查。A1-01核心保存/本人查询已上传m2；A1-02本地新增核心保存的持久防重与并发验证，待验收上传。正式提交、审批、业务HTTP和页面尚未接入。下文旧批次段落保留历史边界，以最新批次为准。
 
 先读根与本模块AGENTS、[基线](docs/baseline.md)、[内部协议](docs/contracts.md)、[依赖](docs/external-contracts.md)、[A进度](docs/progress/A.md)。公开契约为 [M2 OpenAPI](../../contracts/m2.openapi.json) 0.1.0-proposed，不是运行时路由。
 
@@ -142,3 +142,40 @@ uv run --frozen python -m alembic -c services/m2/alembic.ini current
 本轮57项PASS（原48+新增9，真实PG共17，无skip），工程检查PASS。每个测试仅清理自己生成的UUID；最终applications表0行，测试服务已停止。初次故障注入因复制包搜索路径配置错误实际导入了原实现，未算通过；修正隔离副本的包路径后，删掉owner过滤能使对应测试按越权返回失败。完整迁移重放从无业务表的base开始（保留Alembic元数据表），重复upgrade和`alembic check`均通过。
 
 部署迁移未授权。0002的downgrade会删除applications表及数据，只可在确认数据可丢弃时操作；普通测试仅upgrade，不自动降级或清空库。
+
+
+## A1-02 核心申请保存防重（2026-10-28，本地待验收）
+
+[源码](application_creation.py) / [真实PG测试](tests/test_application_creation_postgres.py) / [需求与完整范围](docs/tasks/A1-02.md)。
+申请和创建键同事务：相同可信用户、同键、同规范化输入回放同一申请ID和创建时间；内容变化抛ApplicationCreationConflict。并发重复只产生一条申请和一条键；先到事务回滚时后到请求可以创建。仅回滚竞争失败的候选SAVEPOINT，不丢失调用方已有写入；数据库故障保持可见。
+
+```python
+from services.m2.application_creation import ApplicationCreationStore
+from services.m2.uow import M2UnitOfWork
+
+# factory沿用已明确配置的M2 Session工厂。
+# actor来自可信适配器，data为ApplicationCreate，key为本次逻辑保存的稳定键。
+# 每次调用之前由顶层重新完成认证与授权；以下代码不会替你完成它们。
+with M2UnitOfWork(factory) as uow:
+    result = ApplicationCreationStore().save(
+        uow=uow, actor=actor, data=data, key=key, now=now)
+    # result.application为ApplicationData；result.replayed表示是否复用了记录。
+    uow.commit()
+```
+
+使用PostgreSQL默认READ COMMITTED；其他隔离级别显式拒绝。同步竞争会等待持键事务结束，顶层需保持短事务并配置合适数据库超时，不能持锁调用网络。实际键存Text联合索引，超出PostgreSQL索引大小等数据库错误直接向上抛出，不当成重试冲突；公开输入上限/错误映射仍需在正式HTTP任务明确。
+
+这是**核心保存防重**：固定动作core-create-v1、目标/applications/core，与未来正式提交分开。无审批初始化、202处理中操作或通用HTTP原响应回放；不声称重试完整业务申请已实现。
+
+唯一迁移head现在为0003_creation_keys，parent=0002_applications，新增application_creation_keys；不改既有申请数据。常规复验只upgrade。downgrade会删除已持久化创建键，导致丢失重试身份，不可在有业务数据时随意执行。
+
+在核实并显式启用既有私有PG配置后，可展示：
+
+```bash
+.venv/bin/python -m unittest services.m2.tests.test_application_creation_postgres -v
+# 全量（本轮68项、28真实PG；缺专用配置出现skip不能算数据库通过）
+.venv/bin/python -m unittest discover -s services/m2/tests -v
+```
+
+本批11项新增测试含双连接真实等待、同键同内容/异内容、赢家回滚接替、事务原子性、用户隔离与损坏关联拒绝。
+68项全量、旧数据迁移保留、重复upgrade、alembic check和根check.sh通过。关闭摘要比较使冲突测试失败，证明测试能抓到错误。测试数据已清理，私有数据库停止。未提交/上传/部署。
