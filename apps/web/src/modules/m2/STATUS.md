@@ -1,5 +1,13 @@
 # M2 前端交接状态
 
+## 2026-10-29 WEB-M2-01：申请草稿本地预览
+
+- 关联 `M2-01`、`M2-02`、`E-01`、`E-07`；范围与集成边界见[前端任务](docs/2026-10-29-frontend-integration.md)。新增 `/m2/apply` 路由、[草稿校验](draft.ts)和[预览页](pages/DraftPage.vue)。检查房间 ID、用途、人数和未来时间区间，将本地时间转换为 UTC；只展示五字段申请草稿，不收集身份/审批声明，不发送或保存数据。
+- 验证：`node --test apps/web/src/modules/m2/tests/draft.test.mjs` 5/5 通过；`npm --prefix apps/web run typecheck` 与生产构建通过；`bash scripts/check.sh` 通过（契约、四服务健康、Python 编译、Vue 类型与构建）。本地 Vite 预览加 Edge/Playwright 浏览器检查通过：直接访问、刷新、空白校验、UTC 预览、无 API 请求、清空、320px 和键盘焦点。上述检查不证明真实申请或审批业务可用。
+- 当前后端在 `origin/m2@a60609d` 仍只有 `/healthz` 公开接口，`contracts/m2.openapi.json@0.1.0-proposed` 未批准；没有正式提交、列表、审批、身份/容量校验或前后端联调。前端不会伪造提交成功。`develop` 与 `m2` 已分叉，团队评审与人工集成、服务器部署均未完成。
+
+## 以下为历史交接快照
+
 更新时间：2026-10-22。以下记录当前工作区状态，不等于已提交、已合并或已发布。
 
 ## 已完成与对外入口
