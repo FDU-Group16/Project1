@@ -1,7 +1,7 @@
 # M2 前端准备与 develop 集成任务
 
 日期：2026-10-29（Asia/Shanghai）
-状态：WEB-M2-01 技术检查通过，待提交；WEB-M2-02 待做。真实业务和 develop 部署未验收
+状态：WEB-M2-01 已单独提交并上传；WEB-M2-02 技术检查通过，待提交。真实业务和 develop 部署未验收
 
 ## 协作需求与同步
 
@@ -14,7 +14,7 @@
 
 - 关联需求：`M2-01`、`M2-02`、`M2-03`、`E-01`、`E-07`。
 - 批次 WEB-M2-01：建立申请草稿的本地校验与预览页，只转换拟议 `ApplicationCreate` 的五个字段为 UTC；不发送请求、不持久保存、不接受客户端身份或审批字段。允许修改 `apps/web/src/modules/m2/draft.ts`、`pages/DraftPage.vue`、`routes.ts`、`tests/draft.test.mjs`、`tests/draft.browser.cjs`、本任务、`STATUS.md`。
-- 批次 WEB-M2-02：把 `/m2` 首页改为清晰的模块入口和能力边界，导航到草稿页，并说明审批、查询与真实提交尚未开放。允许修改 `apps/web/src/modules/m2/pages/ModuleHome.vue`、本任务、`STATUS.md`；如需调整范围先记录原因。
+- 批次 WEB-M2-02：把 `/m2` 首页改为清晰的模块入口和能力边界，导航到草稿页，并说明审批、查询与真实提交尚未开放。允许修改 `apps/web/src/modules/m2/pages/ModuleHome.vue`、`tests/home.browser.cjs`、`README.md`、本任务、`STATUS.md`；如需调整范围先记录原因。
 - 不修改其他业务模块、共享认证/API/布局、根路由、全局样式、依赖/锁文件、后端或部署配置。不使用替身；页面不提供模拟成功回执。
 
 ## 方案与验收
@@ -32,3 +32,12 @@
 - `bash scripts/check.sh`：PASS，显式使用仓库隔离的 uv 和本进程 UTF-8/时区环境；四个健康检查端口在启动前均空闲。脚本不覆盖本页的真实浏览器交互或 M2 业务 API。
 - `NODE_PATH=<Codex 捆绑 Node 模块> WEB_BROWSER_CHANNEL=msedge node apps/web/src/modules/m2/tests/draft.browser.cjs http://127.0.0.1:4187`：本地 Vite 预览 PASS，覆盖直接访问/刷新、空白字段焦点与提示、五字段预览、UTC 标识、无 `/api/` 请求、重置、320px 无横向溢出、键盘焦点与无页面异常。系统 Chrome 与当前捆绑 Playwright 协议不兼容，捆绑 Chromium 未安装；改用本机 Edge 通过，无需全局安装。
 - 本批尚未形成提交、push、PR、人工评审或部署证据；结果以之后实际 Git/CI 为准。
+
+WEB-M2-01 后续 Git 证据：提交 `9cfaedb8221f1793f98e70a7b7c4cdbb6d6ef19e` 已从 `a60609d` 普通推送至 `origin/m2`；未推送 `develop`。
+
+## WEB-M2-02 实际检查
+
+- 将原静态说明页替换为可导航的模块入口，入口只连本地草稿；提交、查询、审批、占用均说明真实服务依赖。更新模块 README，避免旧“只有说明页”描述过时。
+- `npm --prefix apps/web run build`：PASS；`bash scripts/check.sh`：PASS（2 项现有 OpenAPI 操作、四服务健康、Python 编译、Vue 类型与生产构建）。草稿校验函数测试 5/5 PASS。
+- `NODE_PATH=<Codex 捆绑 Node 模块> WEB_BROWSER_CHANNEL=msedge node apps/web/src/modules/m2/tests/home.browser.cjs http://127.0.0.1:4187`：本地生产预览 PASS，覆盖单标题、诚实的可用范围、草稿导航、320px 无横溢、焦点与无 API 请求；草稿浏览器回归也 PASS。首次测试在 Vue Router 导航完成前读 URL，测试等待导航后通过，产品代码无需变更。
+- 当前未有业务 HTTP、DB/身份服务端联调或部署证据；本批提交、push 与团队评审仍待实际 Git/人类结果。
