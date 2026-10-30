@@ -34,7 +34,9 @@ export function prepareDraft(input: DraftInput, nowMs = Date.now()): { draft: Ap
   if (!input.roomId.trim()) errors.roomId = '请输入房间 ID。';
   const purpose = input.purpose.trim();
   if (!purpose) errors.purpose = '请填写用途。';
-  else if (purpose.length > 500) errors.purpose = '用途不能超过 500 个字符。';
+  // Match ApplicationCreate / PostgreSQL char_length: Unicode code points,
+  // not UTF-16 code units (which count supplementary characters twice).
+  else if (Array.from(purpose).length > 500) errors.purpose = '用途不能超过 500 个字符。';
   if (!/^[1-9]\d*$/.test(input.attendeeCount)) errors.attendeeCount = '人数须为正整数。';
   const attendeeCount = Number(input.attendeeCount);
   if (!errors.attendeeCount && !Number.isSafeInteger(attendeeCount)) errors.attendeeCount = '人数超出可处理范围。';

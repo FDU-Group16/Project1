@@ -39,6 +39,25 @@ const localTime = date => new Intl.DateTimeFormat('sv-SE', {
     assert.match(await page.locator('.m2-preview').innerText(), /Z/);
     assert.equal(apiRequests.length, 0, 'draft must not submit to an API');
 
+    const purpose = page.locator('#m2-purpose');
+    const boundary = '𠮷'.repeat(500);
+    await purpose.fill('');
+    await purpose.focus();
+    await page.keyboard.insertText(`  ${boundary}  `);
+    assert.equal(await purpose.inputValue(), `  ${boundary}  `, 'browser must preserve the full Unicode input');
+    await page.getByRole('button', { name: '检查并预览' }).click();
+    assert.equal(await page.locator('.m2-preview dd').last().textContent(), boundary);
+    await purpose.fill(boundary);
+    await page.keyboard.insertText('议');
+    await page.getByRole('button', { name: '检查并预览' }).click();
+    assert.equal(await page.locator('.m2-preview').count(), 0);
+    assert.match(await page.locator('#m2-purpose-error').innerText(), /500/);
+    assert.equal(await purpose.getAttribute('aria-invalid'), 'true');
+    assert.equal(await purpose.evaluate(el => el === document.activeElement), true);
+    await purpose.fill(boundary);
+    await page.getByRole('button', { name: '检查并预览' }).click();
+    assert.equal(await page.locator('.m2-preview dd').last().textContent(), boundary);
+
     await page.setViewportSize({ width: 320, height: 700 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no horizontal overflow at 320px');
     await page.getByRole('button', { name: '清空草稿' }).click();
@@ -47,7 +66,8 @@ const localTime = date => new Intl.DateTimeFormat('sv-SE', {
     await page.keyboard.press('Tab');
     assert.equal(await page.locator('#m2-count').evaluate(el => el === document.activeElement), true);
     assert.deepEqual(errors, []);
-    console.log('M2 draft browser: direct route/reload, validation, preview, no API, reset, 320px and keyboard PASS');
+    assert.equal(apiRequests.length, 0);
+    console.log('M2 draft browser: route/reload, Unicode 500/501 input, error focus/recovery, preview, no API, reset, 320px and keyboard PASS');
   } finally {
     await browser.close();
   }

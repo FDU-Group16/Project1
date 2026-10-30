@@ -1,5 +1,23 @@
 # M2 外部依赖登记
 
+## 最新核对：2026-10-30
+
+依据本轮成功fetch的 origin/m2@f720bea5319b9273e88db22f93d53eadecc5f9b1、origin/develop@50ccf95f1fda292c907a3d1907f1c99f5b99f012。A已安全快进m2；develop与m2有26/12个独有提交，仅读取该SHA，未合并/部署/真实联调。具体范围见[A1-03](tasks/A1-03.md)。
+
+| 依赖 | 最新可核对事实 | 对M2的影响与下一步 |
+| --- | --- | --- |
+| D身份/RBAC | develop的contracts/d-dependencies.md为0.1.0-proposed，提出Bearer GET /api/v1/auth/me及id/departmentId/permissions。services/d/STATUS.md仍将正式D-01标未实现/not_ready；临时test_accounts为显式staging/test合成账号，departmentId=null且无m2.apply/审批管理范围 | 不能直接构造合格申请人或将临时登录等同正式鉴权。需M2/D负责人明确权限名、可信院系/管理范围与真实身份接口。该远端记录确定M2组负责D-01，不等于本聊天已获整套D实现任务 |
+| D房间 | develop的d-master-data.md/OpenAPI 0.1.0-proposed已实现，字段id/name/departmentId/openHour/closeHour/weekdays/active/retired，另有座位；内部读当前使用M1专用D_M1_TOKEN | 不能借用M1凭据。M2需评审容量含义、审批路由、读取授权与开放时间语义；不把座位数自动当批准的整室容量 |
+| M1 | develop含真实业务及room-blocks 0.2.0-proposed；本地m2仍为0.1.0-proposed契约，无M2真实消费实现 | 提供方已存在与M2已接入分开；先核对协议差异/受影响组评审，再在获准集成任务中接入，不能复制提供方代码或假报G5通过 |
+| 公共Web | develop已有共享认证、HTTP与代理代码；本地m2尚未集成。m2已有/m2入口和/m2/apply本地草稿，两个前端提交均已上传 | 无需重建页面或共享客户端。正式API接入需人工处理分叉并验证兼容性；草稿仍无保存/提交请求 |
+| B初始化 | m2最新可见B交接为10月26日接口评审，ApprovalPort可信快照/持久恢复建议尚待共同评审 | 不能称申请与首级待办已原子创建；继续等待真实初始化或另列显式隔离测试任务 |
+
+正常身份失败应区分401/403/503，不回退假身份。D-02及临时身份在提供方交接中的测试是提供方证据，本轮没有复跑其数据库、创建账号或连接业务服务。正式申请政策、共享接口审批与部署验收仍须单独确认；没有自动处理分叉或扩大A范围。
+
+下一真实集成任务需明确：由人整合两个分支并保留双方实现/锁文件/部署配置；评审M2身份与房间字段；落实B初始化与事务；再接公开HTTP和现有草稿。A1-03仅修复独立输入边界，不跨过这些依赖。
+
+## 以下为2026-10-22历史快照
+
 日期：2026-10-22。来源：origin/develop@99ce858a2bbf8caa2f4b226a83f989c54d6992d1，以及GitHub分支/PR只读查询；本地已检出同一代码。未发现A/B远端个人分支或M2业务PR；无法据此推断队友本地是否已开发。
 
 | ID/提供方 | 协议与能力事实 | 认证、地址与重试 | 后续验收/责任 |

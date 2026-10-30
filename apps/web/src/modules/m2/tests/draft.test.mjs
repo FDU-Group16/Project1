@@ -48,3 +48,19 @@ test('past, invalid and reversed intervals are rejected', () => {
 test('purpose is limited to the proposed input contract length', () => {
   assert.ok(prepareDraft({ ...valid, purpose: 'x'.repeat(501) }, now).errors.purpose);
 });
+
+test('purpose length counts Unicode code points after trimming', () => {
+  for (const purpose of ['论'.repeat(500), '𠮷'.repeat(500), '会😀'.repeat(250), 'e\u0301'.repeat(250)]) {
+    const result = prepareDraft({ ...valid, purpose: ` \n${purpose}\t ` }, now);
+    assert.deepEqual(result.errors, {});
+    assert.equal(result.draft?.purpose, purpose);
+  }
+});
+
+test('overlong Unicode input returns an error without a truncated preview', () => {
+  for (const purpose of ['𠮷'.repeat(501), '会😀'.repeat(250) + '议', 'e\u0301'.repeat(250) + 'e']) {
+    const result = prepareDraft({ ...valid, purpose }, now);
+    assert.equal(result.draft, null);
+    assert.ok(result.errors.purpose);
+  }
+});

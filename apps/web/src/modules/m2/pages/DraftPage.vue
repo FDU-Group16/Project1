@@ -66,7 +66,8 @@ function resetDraft() {
         </div>
         <div class="m2-field m2-wide">
           <label for="m2-purpose">用途</label>
-          <textarea id="m2-purpose" v-model="fields.purpose" rows="4" maxlength="500" required :aria-invalid="Boolean(errors.purpose)" :aria-describedby="errors.purpose ? 'm2-purpose-error' : undefined" />
+          <textarea id="m2-purpose" v-model="fields.purpose" rows="4" required :aria-invalid="Boolean(errors.purpose)" :aria-describedby="errors.purpose ? 'm2-purpose-hint m2-purpose-error' : 'm2-purpose-hint'" />
+          <small id="m2-purpose-hint">最多 500 个字符，首尾空白不计入。</small>
           <p v-if="errors.purpose" id="m2-purpose-error" class="m2-error" role="alert">{{ errors.purpose }}</p>
         </div>
       </div>
